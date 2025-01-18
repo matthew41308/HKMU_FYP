@@ -136,41 +136,45 @@ def analyze_methods(code: str) -> Dict:
     }
 
 def main():
+    with open("project_sample/library_management_python/Controllers/UserManager.py","r") as f:
+        sample_code=f.read()
+        result = analyze_methods(sample_code)
+        print(json.dumps(result, indent=2))
     # Example usage
-    sample_code = """
-from typing import List, Optional, Dict, Any
-
-def global_function(data: List[str], timeout: int = 30) -> Optional[Dict]:
-    \"\"\"A standalone function to process data\"\"\"
-    return None
-
-class UserService:
-    \"\"\"User service class\"\"\"
     
-    @staticmethod
-    def create_user(name: str, age: Optional[int] = None) -> Dict[str, Any]:
-        \"\"\"Creates a new user\"\"\"
-        return {"name": name, "age": age}
-    
-    def get_users(self, active: bool = True) -> List[Dict]:
-        \"\"\"Returns list of users\"\"\"
-        return []
-    
-    def _validate_user(self, user_data: Dict) -> bool:
-        \"\"\"Internal method to validate user data\"\"\"
-        return True
-
-class DataProcessor:
-    def __init__(self, config: Dict[str, Any]):
-        self.config = config
-    
-    def __process_internal(self, data: Any) -> None:
-        \"\"\"Private method to process data\"\"\"
-        pass
+    # sample_code = 
     """
-    
-    result = analyze_methods(sample_code)
-    print(json.dumps(result, indent=2))
+    from typing import List, Optional, Dict, Any
 
+    def global_function(data: List[str], timeout: int = 30) -> Optional[Dict]:
+        \"\"\"A standalone function to process data\"\"\"
+        return None
+
+    class UserService:
+        \"\"\"User service class\"\"\"
+        
+        @staticmethod
+        def create_user(name: str, age: Optional[int] = None) -> Dict[str, Any]:
+            \"\"\"Creates a new user\"\"\"
+            return {"name": name, "age": age}
+        
+        def get_users(self, active: bool = True) -> List[Dict]:
+            \"\"\"Returns list of users\"\"\"
+            return []
+        
+        def _validate_user(self, user_data: Dict) -> bool:
+            \"\"\"Internal method to validate user data\"\"\"
+            return True
+
+    class DataProcessor:
+        def __init__(self, config: Dict[str, Any]):
+            self.config = config
+        
+        def __process_internal(self, data: Any) -> None:
+            \"\"\"Private method to process data\"\"\"
+            pass
+    """
+
+    
 if __name__ == "__main__":
     main()
