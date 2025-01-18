@@ -1,0 +1,4 @@
+This file is storing the code of different projects from the internet. They are samples to test our application. The source of these projects are as follow.
+Coversation between Claude
+https://poe.com/s/nUpwJhxQ5jE7D9bTrLn8.
+library_management_python: https://github.com/hamzaavvan/library-management-system

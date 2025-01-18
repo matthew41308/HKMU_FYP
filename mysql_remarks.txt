@@ -1,0 +1,2 @@
+Application database is MYSQL2
+External application database is MYSQL80

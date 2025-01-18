@@ -1,0 +1,84 @@
+<mxfile host="app.diagrams.net" modified="2024-02-21T08:00:00.000Z" agent="Mozilla/5.0" version="21.1.2" type="device">
+  <diagram id="CDInsight-DFD" name="CDInsight Data Flow">
+    <mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+        
+        <!-- External Entity: Developer -->
+        <mxCell id="2" value="Developer" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.externalEntity" parent="1" vertex="1">
+          <mxGeometry x="50" y="200" width="100" height="60" as="geometry"/>
+        </mxCell>
+        
+        <!-- Processes -->
+        <mxCell id="3" value="User Interface" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.process" parent="1" vertex="1">
+          <mxGeometry x="200" y="200" width="120" height="60" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="4" value="Code Parser" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.process" parent="1" vertex="1">
+          <mxGeometry x="200" y="320" width="120" height="60" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="5" value="Security Module" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.process" parent="1" vertex="1">
+          <mxGeometry x="400" y="320" width="120" height="60" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="6" value="AI Module" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.process" parent="1" vertex="1">
+          <mxGeometry x="400" y="200" width="120" height="60" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="7" value="Report Generator" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.process" parent="1" vertex="1">
+          <mxGeometry x="600" y="200" width="120" height="60" as="geometry"/>
+        </mxCell>
+        
+        <!-- Data Stores -->
+        <mxCell id="8" value="Database" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.dataStore" parent="1" vertex="1">
+          <mxGeometry x="300" y="440" width="120" height="40" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="9" value="External AI Platform" style="html=1;dashed=0;whiteSpace=wrap;shape=mxgraph.dfd.dataStore" parent="1" vertex="1">
+          <mxGeometry x="500" y="440" width="120" height="40" as="geometry"/>
+        </mxCell>
+        
+        <!-- Data Flows -->
+        <mxCell id="10" value="Code Input" style="endArrow=classic;html=1;" edge="1" parent="1" source="2" target="3">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="11" value="Source Code" style="endArrow=classic;html=1;" edge="1" parent="1" source="3" target="4">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="12" value="Metadata" style="endArrow=classic;html=1;" edge="1" parent="1" source="4" target="8">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="13" value="Retrieved Data" style="endArrow=classic;html=1;" edge="1" parent="1" source="8" target="5">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="14" value="Secured Data" style="endArrow=classic;html=1;" edge="1" parent="1" source="5" target="6">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="15" value="AI Query/Response" style="endArrow=classic;startArrow=classic;html=1;" edge="1" parent="1" source="6" target="9">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="16" value="Processed Results" style="endArrow=classic;html=1;" edge="1" parent="1" source="6" target="7">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        
+        <mxCell id="17" value="Generated Reports" style="endArrow=classic;html=1;" edge="1" parent="1" source="7" target="3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="660" y="160"/>
+              <mxPoint x="260" y="160"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
