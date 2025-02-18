@@ -30,8 +30,9 @@ def db_connect():
         else:
             print(err)
 
-db=db_connect()
+
 
 if __name__ == '__main__':
+    db=db_connect()
     print("Database connection:", db)
     db.close()

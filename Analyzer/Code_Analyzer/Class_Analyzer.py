@@ -112,7 +112,7 @@ class ClassAnalyzer(ast.NodeVisitor):
                 ))
         self.generic_visit(node)
 
-def analyze_code(code: str) -> Dict:
+def class_analyzer(code: str) -> Dict:
     tree = ast.parse(code)
     analyzer = ClassAnalyzer()
     analyzer.visit(tree)
@@ -122,51 +122,14 @@ def analyze_code(code: str) -> Dict:
         'dependencies': [asdict(d) for d in analyzer.dependencies]
     }
 
-def main():
-    # Example usage with more attribute cases
-    sample_code = """
-class BaseService:
-    base_attribute = "base"  # Class-level attribute
+def analyze_class(file_location: str):
+    with open(file_location,"r") as f:
+        sample_code=f.read()
+        result = class_analyzer(sample_code)
+        return json.dumps(result, indent=2)
     
-    def __init__(self):
-        self.name = "base"    # Instance attribute
-        self._private = True  # Private attribute
-    
-    def base_method(self):
-        pass
-
-class UserInterface:
-    def process_user(self):
-        pass
-
-@service
-class UserService(BaseService, UserInterface):
-    \"\"\"Handles user-related operations\"\"\"
-    service_type = "user"  # Class-level attribute
-    
-    def __init__(self):
-        super().__init__()
-        self.users = []          # Instance attribute
-        self.active = True       # Instance attribute
-        self._cache = {}         # Private attribute
-        
-    def add_user(self, user):
-        self.users.append(user)
-        
-    def process_user(self):
-        self.base_method()
-
-class UserController:
-    def __init__(self):
-        self.service = UserService()  # Instance attribute
-        self.enabled: bool = True     # Typed attribute
-    
-    def handle_user(self):
-        self.service.process_user()
-    """
-    
-    result = analyze_code(sample_code)
-    print(json.dumps(result, indent=2))
 
 if __name__ == "__main__":
-    main()
+    file_location ="project_sample/library_management_python/Controllers/UserManager.py"
+    analyzed_class=analyze_class(file_location)
+    print(analyzed_class)
