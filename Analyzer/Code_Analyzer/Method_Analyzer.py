@@ -139,7 +139,7 @@ def analyze_method(file_location: str):
     with open(file_location,"r") as f:
         sample_code=f.read()
         result = method_analyzer(sample_code)
-        return json.dumps(result, indent=2)
+        return result
     
 if __name__ == "__main__":
     file_location ="project_sample/library_management_python/Controllers/UserManager.py"

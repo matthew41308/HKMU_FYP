@@ -126,7 +126,7 @@ def analyze_class(file_location: str):
     with open(file_location,"r") as f:
         sample_code=f.read()
         result = class_analyzer(sample_code)
-        return json.dumps(result, indent=2)
+        return result
     
 
 if __name__ == "__main__":
