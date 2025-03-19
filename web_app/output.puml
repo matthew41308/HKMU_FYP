@@ -1,28 +1,51 @@
 @startuml
 left to right direction
+skinparam packageStyle rectangle
 
-actor User
-actor Admin
+actor "Admin" as Admin
+actor "User" as User
+actor "Guest" as Guest
 
-package "Modules" {
-    usecase "Sign In" as UC_SignIn
-    usecase "Sign Out" as UC_SignOut
-    usecase "View Books" as UC_ViewBooks
-    usecase "Search Books" as UC_SearchBooks
-    usecase "Reserve Book" as UC_ReserveBook
-    usecase "Manage Users" as UC_ManageUsers
-    usecase "Manage Books" as UC_ManageBooks
+package "Authentication" {
+  usecase "Sign In" as UC_SignIn
+  usecase "Sign Out" as UC_SignOut
+  usecase "Sign Up" as UC_SignUp
 }
+
+package "Book Management" {
+  usecase "View Books" as UC_ViewBooks
+  usecase "Search Books" as UC_SearchBooks
+  usecase "Reserve Book" as UC_ReserveBook
+  usecase "Add Book" as UC_AddBook
+  usecase "Edit Book" as UC_EditBook
+  usecase "Delete Book" as UC_DeleteBook
+}
+
+package "User Management" {
+  usecase "View Users" as UC_ViewUsers
+  usecase "Edit User" as UC_EditUser
+  usecase "Delete User" as UC_DeleteUser
+}
+
+Admin --> UC_SignIn
+Admin --> UC_SignOut
+Admin --> UC_ViewBooks
+Admin --> UC_SearchBooks
+Admin --> UC_AddBook
+Admin --> UC_EditBook
+Admin --> UC_DeleteBook
+Admin --> UC_ViewUsers
+Admin --> UC_EditUser
+Admin --> UC_DeleteUser
 
 User --> UC_SignIn
 User --> UC_SignOut
+User --> UC_SignUp
 User --> UC_ViewBooks
 User --> UC_SearchBooks
 User --> UC_ReserveBook
 
-Admin --> UC_SignIn
-Admin --> UC_SignOut
-Admin --> UC_ManageUsers
-Admin --> UC_ManageBooks
+Guest --> UC_ViewBooks
+Guest --> UC_SearchBooks
 
 @enduml

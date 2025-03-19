@@ -11,7 +11,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "./")))
 from config.dbConfig import db_connect,reset_db,db,cursor,isDBconnected
 
 # ✅ 設定 PlantUML JAR 檔案路徑
-PLANTUML_JAR_PATH = "C:\\PlantUML\\plantuml-1.2025.1.jar"  # **確保這個路徑正確**
+PLANTUML_JAR_PATH = "./PlantUML/plantuml-1.2025.1.jar"  # **確保這個路徑正確**
 OUTPUT_PUML = "output.puml"
 OUTPUT_PNG = "output.png"
 
