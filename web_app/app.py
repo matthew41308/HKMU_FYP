@@ -2,6 +2,11 @@ import os, sys, json, openai, re, subprocess, traceback
 from urllib.parse import quote
 from flask import Flask, request, render_template, jsonify, send_file
 from werkzeug.utils import secure_filename
+from controller.metaData_generation import process_folder
+from controller.create_useCase_diagram import export_to_json
+from model.json_for_useCase import get_json_for_useCase
+from werkzeug.utils import secure_filename
+import shutil
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "./")))
 from config.dbConfig import db_connect,reset_db,db,cursor,isDBconnected
 
@@ -107,60 +112,20 @@ def initialize_db():
             return jsonify({"error": "無法連接 MySQL"}), 500
 
     try:
-        # 🔹 建立 `components` 表
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS components (
-            component_id INT AUTO_INCREMENT PRIMARY KEY,
-            component_name VARCHAR(255) NOT NULL,
-            component_type ENUM('class', 'function', 'module', 'external_library') NOT NULL,
-            description TEXT
-        );
-        """)
-
-        # 🔹 建立 `methods` 表 (與 components 有外鍵關係)
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS methods (
-            method_id INT AUTO_INCREMENT PRIMARY KEY,
-            component_id INT NOT NULL,
-            method_name VARCHAR(255) NOT NULL,
-            FOREIGN KEY (component_id) REFERENCES components(component_id) ON DELETE CASCADE
-        );
-        """)
-
-        # 🔹 建立 `methodparameters` 表 (與 methods 有外鍵關係)
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS methodparameters (
-            parameter_id INT AUTO_INCREMENT PRIMARY KEY,
-            method_id INT NOT NULL,
-            parameter_name VARCHAR(255) NOT NULL,
-            parameter_type VARCHAR(255),
-            FOREIGN KEY (method_id) REFERENCES methods(method_id) ON DELETE CASCADE
-        );
-        """)
-
-        # 🔹 建立 `variableparametermapping` 表 (與 methodparameters 有外鍵關係)
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS variableparametermapping (
-            mapping_id INT AUTO_INCREMENT PRIMARY KEY,
-            parameter_id INT NOT NULL,
-            variable_name VARCHAR(255) NOT NULL,
-            FOREIGN KEY (parameter_id) REFERENCES methodparameters(parameter_id) ON DELETE CASCADE
-        );
-        """)
-
-        # 🔹 建立 `componentdependencies` 表 (與 components 有外鍵關係)
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS componentdependencies (
-            source_component_id INT NOT NULL,
-            target_component_id INT NOT NULL,
-            dependency_type ENUM('uses', 'calls', 'imports', 'extends') NOT NULL,
-            PRIMARY KEY (source_component_id, target_component_id),
-            FOREIGN KEY (source_component_id) REFERENCES components(component_id) ON DELETE CASCADE,
-            FOREIGN KEY (target_component_id) REFERENCES components(component_id) ON DELETE CASCADE
-        );
-        """)
-
-        db.commit()
+        reset_db()
+        # Delete all files from Json_toAI folder
+        json_dir = "web_app/Json_toAI"
+        if os.path.exists(json_dir):
+            for filename in os.listdir(json_dir):
+                file_path = os.path.join(json_dir, filename)
+                try:
+                    if os.path.isfile(file_path) or os.path.islink(file_path):
+                        os.unlink(file_path)
+                    elif os.path.isdir(file_path):
+                        import shutil
+                        shutil.rmtree(file_path)
+                except Exception as del_exc:
+                    print(f"Failed to delete {file_path}. Reason: {del_exc}")
         return jsonify({"message": "✅ All data tables have been created!"}), 200
 
     except Exception as e:
@@ -172,183 +137,99 @@ def initialize_db():
         db.close()
         isDBconnected=False
         
-@app.route("/upload", methods=["POST"])
-def upload_file():
-    if "file" not in request.files:
-        return jsonify({"error": "No file part"}), 400
-
-    file = request.files["file"]
-    if file.filename == "":
-        return jsonify({"error": "No file selected"}), 400
-
-    # ✅ 儲存檔案
-    file_path = os.path.join(UPLOAD_FOLDER, secure_filename(file.filename))
-    file.save(file_path)
-    print(f"✅ File {file.filename} saved to {file_path}")  # 🔹 Debug 訊息
-
-    # ✅ 讀取程式碼並發送至 AI 進行分析
-    with open(file_path, "r") as f:
-        code_content = f.read()
     
-    print("🔍 Submit code for AI analysis...")  # 🔹 Debug 訊息
-    analysis_result = ai_code_analysis(code_content)
-    
-    if "error" in analysis_result:
-        print(f"❌ AI analysis fails: {analysis_result['error']}")  # 🔹 Debug 訊息
-        return jsonify({"error": analysis_result["error"]}), 500
-
-    print("✅ AI 分析完成，準備儲存到 MySQL...")  # 🔹 Debug 訊息
-
-    # ✅ 連接 MySQL
-    global db,cursor,isDBconnected
-    if not isDBconnected:
-        # Get database connection
-        db, cursor = db_connect()
-        if not isDBconnected:
-            return jsonify({"error": "無法連接 MySQL"}), 500
-
+@app.route("/analyse_folder", methods=["POST"])
+def analyse_folder():
+    """
+    Expects a form-data field "folder" which is the name of a folder under the UPLOAD_FOLDER.
+    This endpoint:
+      1. Calls process_folder() to analyze and ingest folder data into MySQL.
+      2. Retrieves the use-case data from the database.
+      3. Exports the data (JSON, JSON.gz, and text) using export_to_json().
+      4. Reads the generated text file and submits its content to the AI platform.
+    """
     try:
-        # ✅ 儲存 `components`
-        query_component = "INSERT INTO components (component_name, component_type, description) VALUES (%s, %s, %s)"
-        component_ids = {}
+        # Get folder name from request form.
+        folder_name = request.form.get("folder_name")
+        folder_path = request.form.get("folder_path")
+        if not folder_path:
+            return jsonify({"error": "No folder path provided."}), 400
+        
+        if not folder_name:
+            return jsonify({"error": "No folder specified in the request."}), 400
 
-        for component in analysis_result["components"]:
-            component_type = component["component_type"]
+        # Build full folder path (the folder should be present under UPLOAD_FOLDER)
+        
+        #if not os.path.isdir(folder_path):
+        #    return jsonify({"error": f"Folder '{folder_path}' does not exist."}), 404
+        
+        print(f"✅ Starting analysis on folder: {folder_path}")
+        # Analyze the folder and insert data into the database.
+        process_folder(folder_path)
 
-            # ✅ 確保 component_type 只有合法值
-            if component_type not in VALID_COMPONENT_TYPES:
-                component_type = "external_library"
+        # Ensure you have a DB connection to fetch the use-case JSON.
+        global db, cursor, isDBconnected
+        if not isDBconnected:
+            db, cursor = db_connect()
+            if cursor is None:
+                return jsonify({"error": "Unable to connect to MySQL."}), 500
 
-            cursor.execute(query_component, (component["component_name"], component_type, component["description"]))
-            component_ids[component["component_name"]] = cursor.lastrowid
+        # Get all data from the database (use-case data).
+        data = get_json_for_useCase(db, cursor)
 
-        print("📥 All components have been successfully stored in MySQL")  # 🔹 Debug 訊息
-
-        # ✅ 儲存 `dependencies`
-        query_dependency = "INSERT INTO componentdependencies (source_component_id, target_component_id, dependency_type) VALUES (%s, %s, %s)"
-        for dependency in analysis_result["dependencies"]:
-            source_id = component_ids.get(dependency["source_component"])
-            target_id = component_ids.get(dependency["target_component"])
-            dependency_type = dependency["dependency_type"]
-
-    # ✅ 修正 `dependency_type`，確保符合 MySQL ENUM 值
-        '''if dependency_type not in VALID_DEPENDENCY_TYPES:
-            print(f"⚠️ Invalid dependency_type: {dependency_type}, defaulting to 'uses'")
-            dependency_type = "uses" # 👉 Defaults back to `uses` to avoid MySQL storage errors'''
-        print("📥 Stored dependencies:", json.dumps(dependency, indent=2))
-
-        if source_id and target_id:
-            cursor.execute(query_dependency, (source_id, target_id, dependency_type))
-
-        db.commit()  # 🔹 提交變更
-        print("✅ MySQL deposit successful!")  # 🔹 Debug 訊息
-
-        return jsonify({"message": f"✅ The file {file.filename} has been uploaded successfully, analyzed and saved in the database!"}), 200
+        # Export the data to JSON files (json, json.gz, and text) under web_app/Json_toAI.
+        # Here we use the folder name as the project name.
+        exported_json = export_to_json(data, folder_name)
 
     except Exception as e:
-        db.rollback()
-        print(f"❌ Storage failed: {e}")  # 🔹 Debug 訊息
-        return jsonify({"error": f"Storage failed: {e}"}), 500
-
-    finally:
-        cursor.close()
-        db.close()
-        isDBconnected=False
-        
+        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 # 📌 **查詢分析結果 API**
 @app.route("/results", methods=["GET"])
 def get_results():
-    global db,cursor,isDBconnected
-    if not isDBconnected:
-        # Get database connection
-        db, cursor = db_connect()
-        if not isDBconnected:
-            return jsonify({"error": "無法連接 MySQL"}), 500
-
+    json_dir = "web_app/Json_toAI"
     try:
-        # ✅ 查詢 `components` 和 `methods`
-        cursor.execute("""
-        SELECT c.component_name, c.component_type, c.description, 
-               COALESCE(GROUP_CONCAT(m.method_name SEPARATOR ', '), '') AS methods
-        FROM components c
-        LEFT JOIN methods m ON c.component_id = m.component_id
-        GROUP BY c.component_id
-        ORDER BY c.component_id DESC LIMIT 5;
-        """)
-        components_results = cursor.fetchall()
+        # List all files in the directory ending with .json
+        json_files = [f for f in os.listdir(json_dir) if f.endswith(".json")]
+        if not json_files:
+            return jsonify({"error": "No JSON file found in Json_toAI directory."}), 404
 
-        # ✅ 查詢 `componentdependencies`
-        cursor.execute("""
-        SELECT source_component_id, target_component_id, dependency_type
-        FROM componentdependencies
-        ORDER BY source_component_id DESC LIMIT 5;
-        """)
-        dependencies_results = cursor.fetchall()
-
-        return jsonify({
-            "components": components_results,
-            "dependencies": dependencies_results
-        }), 200
+        # Assume there is only one JSON file, so pick the first one.
+        json_file = os.path.join(json_dir, json_files[0])
+        with open(json_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            
+        return jsonify(data), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-    finally:
-        cursor.close()
-        db.close()
-        isDBconnected=False
-
-# 📌 **生成 UML API**
-@app.route("/generate_uml", methods=["GET"])
 @app.route("/generate_uml", methods=["GET"])
 def generate_uml():
-    global db,cursor,isDBconnected
-    if not isDBconnected:
-        # Get database connection
-        db, cursor = db_connect()
-        if not isDBconnected:
-            return jsonify({"error": "無法連接 MySQL"}), 500
-
     try:
-        # 🔹 查詢 components
-        cursor.execute("SELECT component_name, component_type FROM components")
-        results = cursor.fetchall()
-        components = [{"name": row["component_name"], "type": row["component_type"]} for row in results]
+        # -----------------------------------------------------------------------------
+        # Retrieve the exported txt file from the Json_toAI folder.
+        # -----------------------------------------------------------------------------
+        json_dir = "web_app/Json_toAI"
+        txt_files = [f for f in os.listdir(json_dir) if f.endswith(".txt")]
+        if not txt_files:
+            return jsonify({"error": "No txt file found in Json_toAI directory."}), 404
 
-        if not components:
-            print("⚠️ MySQL `components` table is empty！")
-            return jsonify({"error": "❌ No components found, please check if there is data in the database"}), 500
+        txt_file_path = os.path.join(json_dir, txt_files[0])
+        with open(txt_file_path, "r", encoding="utf-8") as file:
+            exported_text = file.read()
 
-        # 🔹 查詢 dependencies
-        cursor.execute("""
-            SELECT c1.component_name AS source_component, 
-                c2.component_name AS target_component, 
-                d.dependency_type
-            FROM componentdependencies d
-            JOIN components c1 ON d.source_component_id = c1.component_id
-            JOIN components c2 ON d.target_component_id = c2.component_id
-        """)
-        dependencies = [{"source": row["source_component"], "target": row["target_component"], "type": row["dependency_type"]} for row in cursor.fetchall()]
+        print("Exported text file content:")
+        print(exported_text)
 
-        if not dependencies:
-            print("⚠️ MySQL `componentdependencies` table is empty！")
-            return jsonify({"error": "❌ Dependencies not found, please confirm whether there is data in the database"}), 500
-
-        # ✅ 準備 JSON 給 AI
-        uml_data = {"components": components, "dependencies": dependencies}
-        print("🔍 Prepare to send AI analysis, JSON data is as follows:")
-        print(json.dumps(uml_data, indent=2))  # 🛠 Debug 訊息
-
-        # 🔹 **發送請求給 OpenAI**
+        # -----------------------------------------------------------------------------
+        # Build the PlantUML prompt using the content from the txt file.
+        # -----------------------------------------------------------------------------
         prompt = f"""
-        Generate a well-formatted PlantUML sequence diagram with clear structure.
-        - Do NOT repeat participants.
-        - Show only necessary interactions.
-        - Ensure the direction of dependencies is correct.
-
-        JSON Data:
-        {json.dumps(uml_data, indent=2)}
+        From the given file, the data inside are metadata extracted from a project, the data includes information of the actual code. From the relationship of the data, please try to draw a use case diagram to illustrate the design of the project, the graph should be in format of plantuml with a older version.
+        Please only send me back the PlantUML code without any other response or comment
+        Data:
+        {exported_text}
         """
 
         response = client.chat.completions.create(
@@ -365,27 +246,29 @@ def generate_uml():
         print("🔍 UML code for AI response:")
         print(plantuml_code)
 
-        # **修正 PlantUML，確保正確格式**
+        # -----------------------------------------------------------------------------
+        # Fix PlantUML formatting: remove any markdown code block markers
+        # and ensure it starts with @startuml.
+        # -----------------------------------------------------------------------------
         plantuml_code = plantuml_code.replace("```plantuml", "").replace("```", "").strip()
-
-        # **確保包含 @startuml**
         if not plantuml_code.startswith("@startuml"):
             plantuml_code = "@startuml\n" + plantuml_code + "\n@enduml"
 
-        # 🔹 **儲存為 `output.puml`**
+        # Save the generated PlantUML code.
         with open(OUTPUT_PUML, "w", encoding="utf-8") as file:
             file.write(plantuml_code)
-
         print(f"✅ PlantUML code has been saved to {OUTPUT_PUML}")
 
-        # 🔹 **執行 PlantUML 轉換 PNG**
+        # -----------------------------------------------------------------------------
+        # Execute PlantUML to convert the PUML to a PNG image.
+        # -----------------------------------------------------------------------------
         if os.path.exists(PLANTUML_JAR_PATH):
             subprocess.run(["java", "-jar", PLANTUML_JAR_PATH, OUTPUT_PUML], check=True)
             print("✅ UML picture generated successfully！")
         else:
             return jsonify({"error": f"PlantUML JAR file not found: {PLANTUML_JAR_PATH}"}), 500
 
-        # **✅ 確保 `output.png` 存在後再回傳**
+        # Ensure the output image exists and return it.
         output_png_path = os.path.abspath(OUTPUT_PNG)
         if os.path.exists(output_png_path):
             print(f"✅ PNG generated successfully！({output_png_path})")
@@ -395,13 +278,8 @@ def generate_uml():
 
     except Exception as e:
         print("❌ Error generating UML! The detailed errors are as follows:")
-        traceback.print_exc()  # ✅ 顯示完整錯誤訊息
+        traceback.print_exc()
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
-
-    finally:
-        cursor.close()
-        db.close()
-        isDBconnected=False
 
 @app.route("/download_uml", methods=["GET"])
 def download_uml():

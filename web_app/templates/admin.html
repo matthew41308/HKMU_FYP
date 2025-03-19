@@ -1,32 +1,87 @@
 <!DOCTYPE html>
 <html lang="zh-HK">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理後台</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理後台</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f4f4f4;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 10px 0;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    input[type="text"] {
+      width: calc(100% - 20px);
+      padding: 10px;
+      margin-top: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+  </style>
 </head>
 <body>
-    <h1>🔧 管理後台</h1>
+  <div class="container">
+    <h1>🔧 Backend Operation</h1>
 
-    <h2>⚙️ 資料庫管理</h2>
-    <button onclick="resetDatabase()">🗑️ 重置資料庫</button>
-    <button onclick="initializeDatabase()">🔄 重新建立資料表</button>
+    <h2>⚙️ Database Operation</h2>
+    <button onclick="resetDatabase()">🗑️ Reset Database and Files</button>
+    <button onclick="initializeDatabase()">🔄 Rebuild Database</button>
+
+    <h2>📂 Folder Analysis</h2>
+    <input type="text" id="adminFolderName" placeholder="Please enter the name of folder">
+    <button onclick="analyseFolderAdmin()">Analyse Folder</button>
 
     <script>
-        function resetDatabase() {
-            if (confirm("⚠️ 確定要重置資料庫嗎？這將刪除所有數據！")) {
-                fetch('/reset_db', { method: 'POST' })
-                .then(response => response.json())
-                .then(data => alert(data.message || data.error))
-                .catch(error => alert("❌ 無法重置資料庫：" + error));
-            }
+      function resetDatabase() {
+        if (confirm("⚠️ WARNING, resetting database will cause all data not recoverable")) {
+          fetch('/reset_db', { method: 'POST' })
+          .then(response => response.json())
+          .then(data => alert(data.message || data.error))
+          .catch(error => alert("❌ Unable to reset database：" + error));
         }
-        function initializeDatabase() {
-            fetch('/initialize_db', { method: 'POST' })
-            .then(response => response.json())
-            .then(data => alert(data.error ? "❌ " + data.error : "✅ " + data.message))
-            .catch(error => alert("❌ 連線錯誤：" + error));
+      }
+
+      function initializeDatabase() {
+        fetch('/initialize_db', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => alert(data.error ? "❌ " + data.error : "✅ " + data.message))
+        .catch(error => alert("❌ Connection Error：" + error));
+      }
+
+      function analyseFolderAdmin() {
+        const folderName = document.getElementById("adminFolderName").value.trim();
+        if (!folderName) {
+          alert("❌ Please enter the name of folder.");
+          return;
         }
+        const formData = new FormData();
+        formData.append("folder", folderName);
+        fetch("/analyse_folder", { method: "POST", body: formData })
+        .then(response => response.json())
+        .then(data => alert(data.error ? "❌ " + data.error : "✅ " + data.message))
+        .catch(error => alert("❌ Analyse Error：" + error));
+      }
     </script>
+  </div>
 </body>
 </html>

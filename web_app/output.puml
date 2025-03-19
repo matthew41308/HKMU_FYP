@@ -1,0 +1,28 @@
+@startuml
+left to right direction
+
+actor User
+actor Admin
+
+package "Modules" {
+    usecase "Sign In" as UC_SignIn
+    usecase "Sign Out" as UC_SignOut
+    usecase "View Books" as UC_ViewBooks
+    usecase "Search Books" as UC_SearchBooks
+    usecase "Reserve Book" as UC_ReserveBook
+    usecase "Manage Users" as UC_ManageUsers
+    usecase "Manage Books" as UC_ManageBooks
+}
+
+User --> UC_SignIn
+User --> UC_SignOut
+User --> UC_ViewBooks
+User --> UC_SearchBooks
+User --> UC_ReserveBook
+
+Admin --> UC_SignIn
+Admin --> UC_SignOut
+Admin --> UC_ManageUsers
+Admin --> UC_ManageBooks
+
+@enduml
