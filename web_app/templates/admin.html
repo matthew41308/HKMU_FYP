@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理後台</title>
+</head>
+<body>
+    <h1>🔧 管理後台</h1>
+
+    <h2>⚙️ 資料庫管理</h2>
+    <button onclick="resetDatabase()">🗑️ 重置資料庫</button>
+    <button onclick="initializeDatabase()">🔄 重新建立資料表</button>
+
+    <script>
+        function resetDatabase() {
+            if (confirm("⚠️ 確定要重置資料庫嗎？這將刪除所有數據！")) {
+                fetch('/reset_db', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => alert(data.message || data.error))
+                .catch(error => alert("❌ 無法重置資料庫：" + error));
+            }
+        }
+        function initializeDatabase() {
+            fetch('/initialize_db', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => alert(data.error ? "❌ " + data.error : "✅ " + data.message))
+            .catch(error => alert("❌ 連線錯誤：" + error));
+        }
+    </script>
+</body>
+</html>
