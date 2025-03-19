@@ -21,7 +21,7 @@ def insert_components(analyzed_class, db, cursor):
             component_type = component.get("component_type")
             description = component.get("description")
             organization_name = component.get("organization_name")
-            
+            file_location=component.get("file_location")
             # Skip if required fields are missing
             if not all([component_name, component_type]):
                 continue
@@ -44,17 +44,17 @@ def insert_components(analyzed_class, db, cursor):
             if organization_id:
                 sql = """
                     INSERT INTO components 
-                    (component_name, component_type, description, organization_id) 
-                    VALUES (%s, %s, %s, %s)
+                    (component_name, component_type, description, organization_id,file_location) 
+                    VALUES (%s, %s, %s, %s,%s)
                 """
-                values = (component_name, component_type, description, organization_id)
+                values = (component_name, component_type, description, organization_id,file_location)
             else:
                 sql = """
                     INSERT INTO components 
-                    (component_name, component_type, description) 
-                    VALUES (%s, %s, %s)
+                    (component_name, component_type, description,file_location) 
+                    VALUES (%s, %s, %s,%s)
                 """
-                values = (component_name, component_type, description)
+                values = (component_name, component_type, description,file_location)
             
             cursor.execute(sql, values)
             db.commit()

@@ -110,7 +110,8 @@ def class_analyzer(code: str, file_path: str):  # Modified to accept file_path
 
     return {
         'components': [asdict(c) for c in analyzer.components],
-        'dependencies': [asdict(d) for d in analyzer.dependencies]
+        'dependencies': [asdict(d) for d in analyzer.dependencies],
+        'file_location':file_path
     }
 
 def analyze_class(file_location: str):

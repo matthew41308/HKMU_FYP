@@ -13,6 +13,7 @@ def get_json_for_useCase(db, cursor):
         return None
 
     all_data = {
+        'organizations':[],
         'components': [],
         'methods': [],
         'method_parameters': [],
@@ -20,6 +21,7 @@ def get_json_for_useCase(db, cursor):
     }
 
     tables = {
+        'organizations':'organizations',
         'components': 'components',
         'methods': 'methods',
         'method_parameters': 'methodparameters',
