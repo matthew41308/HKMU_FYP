@@ -4,18 +4,8 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 db = None
 cursor = None
-
 isDBconnected=False
 
-config = {
-    'host': '127.0.0.1',   # **確保使用 127.0.0.1 而不是 localhost**
-    'user': 'root',
-    'password': '24295151qQ!',  # **請確保密碼正確**
-    'database': 'cd_insight',
-    'port': 3307,         # **確保使用正確的 MySQL 連接埠**
-    'cursorclass': pymysql.cursors.DictCursor,  # **回傳 dict 格式**
-    'autocommit': True
-}
 
 def db_connect():
     """ 建立 MySQL 連線 """
@@ -87,6 +77,25 @@ def reset_db():
         cursor.close()
         db.close()
         isDBconnected=False
+
+def get_mysql_password():
+
+    mysql_password = os.getenv('MYSQL_PASSWORD')
+    if mysql_password is None:
+        raise EnvironmentError(
+            "Environment variable 'MYSQL_PASSWORD' is not set. "
+        )
+    return mysql_password
+
+config = {
+    'host': 'mysql-6xgt',   
+    'user': 'mysql',
+    'password': get_mysql_password(),  
+    'database': 'cd_insight',
+    'port': 3306,        
+    'cursorclass': pymysql.cursors.DictCursor, 
+    'autocommit': True
+}
     
 if __name__=="__main__":
     reset_db()
