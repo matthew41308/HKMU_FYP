@@ -1,0 +1,11 @@
+# Flask is used for the web application.
+Flask>=2.2.5
+
+# PyMySQL is used for database interactions.
+PyMySQL>=1.0.3
+
+# OpenAI library to interact with the OpenAI API.
+openai>=0.27.8
+
+# PlantUML package acts as a wrapper—helpful if you wish to integrate with the PlantUML jar.
+plantuml>=1.1.0
