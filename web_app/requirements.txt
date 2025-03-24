@@ -8,4 +8,4 @@ PyMySQL>=1.0.3
 openai>=0.27.8
 
 # PlantUML package acts as a wrapper—helpful if you wish to integrate with the PlantUML jar.
-plantuml>=1.1.0
+plantuml
