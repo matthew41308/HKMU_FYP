@@ -72,7 +72,7 @@
      <body>
       <h1>📂 Upload Code</h1>
       <form id="uploadForm" enctype="multipart/form-data">
-          <input type="file" id="fileInput" name="file">
+        <input type="file" id="fileInput" name="file" webkitdirectory directory multiple>
           <button type="submit">📤 Upload</button>
       </form>
   
@@ -83,10 +83,16 @@
               <button onclick="fetchResults()">🔍 Show Results</button>
               <pre id="results">Waiting for analysis results...</pre>
           </div>
-  
+          
           <!-- UML 圖 -->
           <div class="card half-width">
               <h2>🖼️ UML Diagram</h2>
+              <label for="diagramType">Select Diagram:</label>
+              <select id="diagramType">
+                  <option value="use case diagram">Use Case Diagram</option>
+                  <option value="sequence diagram">Sequence Diagram</option>
+                  <option value="class diagram">Class Diagram</option>
+              </select>
               <button onclick="generateUML()">⚙️ Generate UML</button>
               <button onclick="downloadUML()">📥 Download Diagram</button>
               <button onclick="downloadPUML()">📝 Download PUML.file</button>
@@ -97,16 +103,22 @@
         <script>
             document.getElementById("uploadForm").addEventListener("submit", function(event) {
                 event.preventDefault();
-    
+
+                const files = document.getElementById("fileInput").files;
                 const formData = new FormData();
-                const fileInput = document.getElementById("fileInput").files[0];
-    
-                if (!fileInput) {
-                    alert("❌ Please select at least one file before uploading！");
+
+                if (files.length === 0) {
+                    alert("❌ Please select at least one file or folder before uploading！");
                     return;
                 }
-    
-                formData.append("file", fileInput);
+
+                // Detect if this is a folder upload (multiple files + webkitdirectory)
+                const isFolder = files.length > 1;
+
+                // Append all files
+                for (let i = 0; i < files.length; i++) {
+                    formData.append("file", files[i]);
+                }
     
                 fetch("/upload", {
                     method: "POST",
@@ -118,6 +130,34 @@
                         alert("❌ Upload failed：" + data.error);
                     } else {
                         alert("✅ " + data.message);
+
+                        if (isFolder) {
+                            const folderName = prompt("📁 Enter the subfolder name you want to analyze:");
+                            if (!folderName) return;
+
+                            // Automatically call /analyse_folder
+                            const folderPath = "/uploads/" + folderName;
+                            const analysisData = new FormData();
+                            analysisData.append("folder_name", folderName);
+                            analysisData.append("folder_path", folderPath);
+
+                            fetch("/analyse_folder", {
+                                method: "POST",
+                                body: analysisData
+                            })
+                            .then(res => res.json())
+                            .then(res => {
+                                if (res.error) {
+                                    alert("❌ Analysis failed: " + res.error);
+                                } else {
+                                    alert("✅ Analysis complete!");
+                                    fetchResults();
+                                }
+                            })
+                            .catch(err => {
+                                alert("❌ Error analyzing: " + err);
+                            });
+                        }
                     }
                 })
                 .catch(error => {
@@ -137,7 +177,14 @@
             }
     
             function generateUML() {
-                fetch('/generate_uml')
+                const diagramType = document.getElementById("diagramType").value;
+                const formData = new FormData();
+                formData.append("document_type", diagramType);
+
+                fetch('/generate_uml', {
+                    method: 'POST',
+                    body: formData
+                })
                 .then(response => {
                     if (!response.ok) {
                         throw new Error("❌ Generate UML failed!");
@@ -146,7 +193,7 @@
                 })
                 .then(blob => {
                     document.getElementById("umlImage").src = URL.createObjectURL(blob);
-                    alert("✅ UML picture generated successfully!");
+                    alert("✅ UML diagram generated!");
                 })
                 .catch(error => {
                     alert(error.message);
