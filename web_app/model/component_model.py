@@ -16,12 +16,12 @@ def insert_components(analyzed_class, db, cursor):
         return
 
     try:
+        file_location=analyzed_class["file_location"]
         for component in analyzed_class["components"]:
             component_name = component.get("component_name")
             component_type = component.get("component_type")
             description = component.get("description")
             organization_name = component.get("organization_name")
-            file_location=component.get("file_location")
             # Skip if required fields are missing
             if not all([component_name, component_type]):
                 continue
