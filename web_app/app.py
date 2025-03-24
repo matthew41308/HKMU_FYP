@@ -6,7 +6,10 @@ from controller.metaData_generation import process_folder
 from controller.create_useCase_diagram import export_to_json
 from model.json_for_useCase import get_json_for_useCase
 from werkzeug.utils import secure_filename
+from controller.ai_code_analysis import ai_code_analysis
 import shutil
+
+from web_app.controller.create_uml import generate_uml_controller
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "./")))
 from config.dbConfig import db_connect,reset_db,db,cursor,isDBconnected
 
@@ -37,50 +40,6 @@ VALID_DEPENDENCY_TYPES = {"uses", "implements", "extends", "includes", "calls", 
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-
-# ✅ AI 進行程式碼分析
-def ai_code_analysis(code: str) -> dict:
-    prompt = f"""
-    Analyze the following code and output ONLY valid JSON with:
-    {{
-        "components": [
-            {{
-                "component_name": "ClassName or ComponentName",
-                "component_type": "class/component/function/module",
-                "description": "Brief description",
-                "attributes": ["attribute1", "attribute2"],
-                "methods": ["method1", "method2"]
-            }}
-        ],
-        "dependencies": [
-            {{
-                "source_component": "ComponentA",
-                "target_component": "ComponentB",
-                "dependency_type": "calls/imports/extends/uses"
-            }}
-        ]
-    }}
-    Code:
-    {code}
-    """
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "You are a code analysis assistant."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0,
-            max_tokens=4096
-        )
-
-        # ✅ 清理 AI 回應並轉換成 JSON
-        ai_output = response.choices[0].message.content.strip()
-        cleaned_output = ai_output.replace("```json", "").replace("```", "").strip()
-        return json.loads(cleaned_output)
-
-    except Exception as e:
-        return {"error": str(e)}
 
 # 📌 **首頁**
 @app.route("/")
@@ -137,53 +96,64 @@ def initialize_db():
         db.close()
         isDBconnected=False
         
+@app.route("/upload", methods=["POST"])
+def upload():
+    uploaded_files = request.files.getlist("file")
+
+    if not uploaded_files:
+        return jsonify({"error": "No files received"}), 400
+
+    for file in uploaded_files:
+        if file and allowed_file(file.filename):
+            # 👇 Preserve subfolder structure (example: "project1/main.py")
+            relative_path = file.filename  # this keeps subfolders if browser supports it
+            safe_path = secure_filename(relative_path.replace("\\", "/"))  # Windows fix
+            full_save_path = os.path.join(app.config["UPLOAD_FOLDER"], safe_path)
+
+            os.makedirs(os.path.dirname(full_save_path), exist_ok=True)
+            file.save(full_save_path)
+
+    return jsonify({
+        "message": f"✅ {len(uploaded_files)} files uploaded successfully!",
+        "uploaded_path": app.config["UPLOAD_FOLDER"]
+    }), 200
     
 @app.route("/analyse_folder", methods=["POST"])
 def analyse_folder():
     """
-    Expects a form-data field "folder" which is the name of a folder under the UPLOAD_FOLDER.
+    Expects form-data with "folder_name" under UPLOAD_FOLDER.
     This endpoint:
-      1. Calls process_folder() to analyze and ingest folder data into MySQL.
-      2. Retrieves the use-case data from the database.
-      3. Exports the data (JSON, JSON.gz, and text) using export_to_json().
-      4. Reads the generated text file and submits its content to the AI platform.
+      1. Calls process_folder() to analyze and ingest data into MySQL.
+      2. Retrieves use-case data from the database.
+      3. Exports metadata (JSON, GZ, TXT).
+      4. Sends TXT content to the AI platform.
     """
     try:
-        # Get folder name from request form.
+        # 1️⃣ Get folder name and build path
         folder_name = request.form.get("folder_name")
-        folder_path = request.form.get("folder_path")
-        if not folder_path:
-            return jsonify({"error": "No folder path provided."}), 400
-        
         if not folder_name:
             return jsonify({"error": "No folder specified in the request."}), 400
 
-        # Build full folder path (the folder should be present under UPLOAD_FOLDER)
-        
-        #if not os.path.isdir(folder_path):
-        #    return jsonify({"error": f"Folder '{folder_path}' does not exist."}), 404
-        
+        folder_path = os.path.join(app.config["UPLOAD_FOLDER"], folder_name)
+        if not os.path.isdir(folder_path):
+            return jsonify({"error": f"Folder '{folder_path}' does not exist."}), 404
+
         print(f"✅ Starting analysis on folder: {folder_path}")
-        # Analyze the folder and insert data into the database.
-        process_folder(folder_path)
 
-        # Ensure you have a DB connection to fetch the use-case JSON.
-        global db, cursor, isDBconnected
-        if not isDBconnected:
-            db, cursor = db_connect()
-            if cursor is None:
-                return jsonify({"error": "Unable to connect to MySQL."}), 500
+        # 2️⃣ Call AI analysis pipeline (includes process_folder + export)
+        from controller.ai_code_analysis import ai_code_analysis
+        ai_response = ai_code_analysis(folder_path, folder_name)
 
-        # Get all data from the database (use-case data).
-        data = get_json_for_useCase(db, cursor)
+        # 3️⃣ Save AI response to file
+        with open("web_app/Json_toAI/ai_analysis.json", "w", encoding="utf-8") as f:
+            json.dump(ai_response, f, indent=2)
 
-        # Export the data to JSON files (json, json.gz, and text) under web_app/Json_toAI.
-        # Here we use the folder name as the project name.
-        exported_json = export_to_json(data, folder_name)
+        # 4️⃣ (Optional) Return AI response directly
+        return jsonify({"message": "✅ Analysis complete!", "ai_response": ai_response}), 200
 
     except Exception as e:
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
-
+    
 # 📌 **查詢分析結果 API**
 @app.route("/results", methods=["GET"])
 def get_results():
@@ -204,82 +174,10 @@ def get_results():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/generate_uml", methods=["GET"])
+@app.route("/generate_uml", methods=["POST"])
 def generate_uml():
-    try:
-        # -----------------------------------------------------------------------------
-        # Retrieve the exported txt file from the Json_toAI folder.
-        # -----------------------------------------------------------------------------
-        json_dir = "web_app/Json_toAI"
-        txt_files = [f for f in os.listdir(json_dir) if f.endswith(".txt")]
-        if not txt_files:
-            return jsonify({"error": "No txt file found in Json_toAI directory."}), 404
-
-        txt_file_path = os.path.join(json_dir, txt_files[0])
-        with open(txt_file_path, "r", encoding="utf-8") as file:
-            exported_text = file.read()
-
-        print("Exported text file content:")
-        print(exported_text)
-
-        # -----------------------------------------------------------------------------
-        # Build the PlantUML prompt using the content from the txt file.
-        # -----------------------------------------------------------------------------
-        prompt = f"""
-        From the given file, the data inside are metadata extracted from a project, the data includes information of the actual code. From the relationship of the data, please try to draw a use case diagram to illustrate the design of the project, the graph should be in format of plantuml with a older version.
-        Please only send me back the PlantUML code without any other response or comment
-        Data:
-        {exported_text}
-        """
-
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "You are an expert in generating optimized PlantUML diagrams."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0,
-            max_tokens=4096
-        )
-
-        plantuml_code = response.choices[0].message.content.strip()
-        print("🔍 UML code for AI response:")
-        print(plantuml_code)
-
-        # -----------------------------------------------------------------------------
-        # Fix PlantUML formatting: remove any markdown code block markers
-        # and ensure it starts with @startuml.
-        # -----------------------------------------------------------------------------
-        plantuml_code = plantuml_code.replace("```plantuml", "").replace("```", "").strip()
-        if not plantuml_code.startswith("@startuml"):
-            plantuml_code = "@startuml\n" + plantuml_code + "\n@enduml"
-
-        # Save the generated PlantUML code.
-        with open(OUTPUT_PUML, "w", encoding="utf-8") as file:
-            file.write(plantuml_code)
-        print(f"✅ PlantUML code has been saved to {OUTPUT_PUML}")
-
-        # -----------------------------------------------------------------------------
-        # Execute PlantUML to convert the PUML to a PNG image.
-        # -----------------------------------------------------------------------------
-        if os.path.exists(PLANTUML_JAR_PATH):
-            subprocess.run(["java", "-jar", PLANTUML_JAR_PATH, OUTPUT_PUML], check=True)
-            print("✅ UML picture generated successfully！")
-        else:
-            return jsonify({"error": f"PlantUML JAR file not found: {PLANTUML_JAR_PATH}"}), 500
-
-        # Ensure the output image exists and return it.
-        output_png_path = os.path.abspath(OUTPUT_PNG)
-        if os.path.exists(output_png_path):
-            print(f"✅ PNG generated successfully！({output_png_path})")
-            return send_file(output_png_path, mimetype="image/png")
-        else:
-            return jsonify({"error": "❌ output.png not generated!"}), 500
-
-    except Exception as e:
-        print("❌ Error generating UML! The detailed errors are as follows:")
-        traceback.print_exc()
-        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+    document_type = request.form.get("document_type", "use case diagram")
+    return generate_uml_controller(document_type)
 
 @app.route("/download_uml", methods=["GET"])
 def download_uml():
