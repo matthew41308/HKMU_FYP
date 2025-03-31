@@ -8,8 +8,7 @@ from model.json_for_useCase import get_json_for_useCase
 from werkzeug.utils import secure_filename
 from controller.ai_code_analysis import ai_code_analysis
 import shutil
-
-from web_app.controller.create_uml import generate_uml_controller
+from controller.create_uml import generate_uml_controller
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "./")))
 from config.dbConfig import db_connect,reset_db,db,cursor,isDBconnected
 
