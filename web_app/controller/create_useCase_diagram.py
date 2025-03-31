@@ -12,7 +12,7 @@ def export_to_json(data, project_name):
         print("No data to export")
         return
 
-    json_dir = "web_app/Json_toAI"
+    json_dir = "Json_toAI"
     if not os.path.exists(json_dir):
         os.makedirs(json_dir)
         print(f"Created directory: {json_dir}")
