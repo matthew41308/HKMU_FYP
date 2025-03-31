@@ -72,7 +72,7 @@ def initialize_db():
     try:
         reset_db()
         # Delete all files from Json_toAI folder
-        json_dir = "web_app/Json_toAI"
+        json_dir = "Json_toAI"
         if os.path.exists(json_dir):
             for filename in os.listdir(json_dir):
                 file_path = os.path.join(json_dir, filename)
@@ -144,7 +144,7 @@ def analyse_folder():
         ai_response = ai_code_analysis(folder_path, folder_name)
 
         # 3️⃣ Save AI response to file
-        with open("web_app/Json_toAI/ai_analysis.json", "w", encoding="utf-8") as f:
+        with open("Json_toAI/ai_analysis.json", "w", encoding="utf-8") as f:
             json.dump(ai_response, f, indent=2)
 
         # 4️⃣ (Optional) Return AI response directly
@@ -156,7 +156,7 @@ def analyse_folder():
 # 📌 **查詢分析結果 API**
 @app.route("/results", methods=["GET"])
 def get_results():
-    json_dir = "web_app/Json_toAI"
+    json_dir = "Json_toAI"
     try:
         # List all files in the directory ending with .json
         json_files = [f for f in os.listdir(json_dir) if f.endswith(".json")]

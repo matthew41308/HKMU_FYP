@@ -27,7 +27,7 @@ def ai_code_analysis(folder_path: str, project_name: str) -> dict:
         export_to_json(data, project_name)
 
         # Step 4: Find the latest .txt file for this project
-        txt_dir = "web_app/Json_toAI"
+        txt_dir = "Json_toAI"
         txt_files = [
             f for f in os.listdir(txt_dir)
             if f.startswith(project_name) and f.endswith(".txt")
