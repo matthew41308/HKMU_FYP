@@ -128,27 +128,20 @@ def analyse_folder():
       4. Sends TXT content to the AI platform.
     """
     try:
-        # 1️⃣ Get folder name and build path
-        folder_name = request.form.get("folder_name")
-        if not folder_name:
-            return jsonify({"error": "No folder specified in the request."}), 400
-
-        folder_path = os.path.join(app.config["UPLOAD_FOLDER"], folder_name)
+        folder_path = os.path.join(app.config["UPLOAD_FOLDER"])
         if not os.path.isdir(folder_path):
             return jsonify({"error": f"Folder '{folder_path}' does not exist."}), 404
 
         print(f"✅ Starting analysis on folder: {folder_path}")
 
-        # 2️⃣ Call AI analysis pipeline (includes process_folder + export)
-        from controller.ai_code_analysis import ai_code_analysis
-        ai_response = ai_code_analysis(folder_path, folder_name)
-
-        # 3️⃣ Save AI response to file
-        with open("Json_toAI/ai_analysis.json", "w", encoding="utf-8") as f:
-            json.dump(ai_response, f, indent=2)
-
-        # 4️⃣ (Optional) Return AI response directly
-        return jsonify({"message": "✅ Analysis complete!", "ai_response": ai_response}), 200
+        errorMessages = process_folder(folder_path)
+        result = get_json_for_useCase(db, cursor)
+        project_name = request.get_data
+        export_to_json(result, project_name)
+        if errorMessages:
+            return jsonify({"message": "Please find the following error", "error": errorMessages}),500
+        else:
+            return jsonify({"message": "✅ Analysis complete!","error":""}), 200
 
     except Exception as e:
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500

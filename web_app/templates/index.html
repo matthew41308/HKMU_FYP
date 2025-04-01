@@ -75,7 +75,13 @@
         <input type="file" id="fileInput" name="file" webkitdirectory directory multiple>
           <button type="submit">📤 Upload</button>
       </form>
-  
+
+    <div>
+        <h1>📂 Start Analysing</h1>
+        <input type="text" id="ProjectName" name="ProjectName">
+        <button id="analyse" onClick="analyse_folder()" hidden="true">📤 Analyse</button>
+    </div>
+    
       <div class="container">
           <!-- 分析結果 -->
           <div class="card half-width">
@@ -101,14 +107,17 @@
         </div>
  
         <script>
-            document.getElementById("uploadForm").addEventListener("submit", function(event) {
-                event.preventDefault();
+            document.getElementById("uploadForm").addEventListener("submit", uploadForm());
 
+            function uploadForm(event)
+            {
+                event.preventDefault();
                 const files = document.getElementById("fileInput").files;
                 const formData = new FormData();
 
                 if (files.length === 0) {
                     alert("❌ Please select at least one file or folder before uploading！");
+                    document.getElementById("analyse").hidden=true
                     return;
                 }
 
@@ -128,42 +137,36 @@
                 .then(data => {
                     if (data.error) {
                         alert("❌ Upload failed：" + data.error);
+                        document.getElementById("analyse").hidden=true
                     } else {
                         alert("✅ " + data.message);
-
-                        if (isFolder) {
-                            const folderName = prompt("📁 Enter the subfolder name you want to analyze:");
-                            if (!folderName) return;
-
-                            // Automatically call /analyse_folder
-                            const folderPath = "/uploads/" + folderName;
-                            const analysisData = new FormData();
-                            analysisData.append("folder_name", folderName);
-                            analysisData.append("folder_path", folderPath);
-
-                            fetch("/analyse_folder", {
-                                method: "POST",
-                                body: analysisData
-                            })
-                            .then(res => res.json())
-                            .then(res => {
-                                if (res.error) {
-                                    alert("❌ Analysis failed: " + res.error);
-                                } else {
-                                    alert("✅ Analysis complete!");
-                                    fetchResults();
-                                }
-                            })
-                            .catch(err => {
-                                alert("❌ Error analyzing: " + err);
-                            });
-                        }
+                        document.getElementById("analyse").hidden=false
                     }
                 })
                 .catch(error => {
                     alert("❌ Error occurred while uploading：" + error);
+                    document.getElementById("analyse").hidden=true
                 });
-            });
+            }
+
+            function analyse_folder()
+            {
+                fetch("/analyse_folder", {
+                    method: "POST",
+                })
+                .then(res => res.json())
+                .then(res => {
+                    if (res.error) {
+                        alert("❌ Analysis failed: " + res.error);
+                    } else {
+                        alert("✅ Analysis complete!");
+                        fetchResults();
+                    }
+                })
+                .catch(err => {
+                    alert("❌ Error analyzing: " + err);
+                });
+            }
     
             function fetchResults() {
                 fetch('/results')

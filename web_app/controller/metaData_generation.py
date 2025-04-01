@@ -11,7 +11,7 @@ from model.method_model import insert_method
 from model.variable_model import insert_variable
 from model.organization_model import insert_organization
 from config.dbConfig import db_connect, db, cursor, isDBconnected
-
+from flask import jsonify
 def process_file(file_location):
     # Analyze the file
     global db, cursor, isDBconnected
@@ -63,9 +63,10 @@ def process_folder(root_folder):
         db, cursor = db_connect()
         if cursor is None:
             print("❌ Failed to establish database connection")
-            return
+            return False
 
     try:
+        errorMessages=[]
         # === Process the ROOT folder (first layer) ===
         print(f"Processing ROOT folder: {root_folder}")
         try:
@@ -73,8 +74,9 @@ def process_folder(root_folder):
             insert_organization(analyzed_organization, db, cursor)
             db.commit()
         except Exception as e:
-            print(f"❌ Error processing folder {root_folder}: {e}")
+            errorMessages.append(f"❌ Error processing folder {root_folder}: {e}")
             db.rollback()
+
         
         # Optionally, process Python files directly under the root folder.
         try:
@@ -85,7 +87,7 @@ def process_folder(root_folder):
                 if os.path.isfile(full_path):
                     process_file(full_path)
         except PermissionError:
-            print(f"❌ Permission denied accessing files in {root_folder}")
+             errorMessages.append(f"❌ Permission denied accessing files in {root_folder}")
 
         # === Initialize the BFS queues with the children directories of the root folder ===
         folder_queue = deque()
@@ -99,8 +101,7 @@ def process_folder(root_folder):
                     folder_queue.append(full_path)
                 # We already processed files in the root folder above.
         except PermissionError:
-            print(f"❌ Permission denied accessing {root_folder}")
-            return
+            errorMessages.append(f"❌ Permission denied accessing {root_folder}")
 
         level = 2  # Since we already handled the first layer (root folder)
         while folder_queue or file_queue:
@@ -119,7 +120,7 @@ def process_folder(root_folder):
                 try:
                     process_file(file_path)
                 except Exception as e:
-                    print(f"❌ Error processing file {file_path}: {e}")
+                    errorMessages.append(f"❌ Error processing file {file_path}: {e}")
 
             # For every folder in the current level, add its children for analysis.
             for folder in current_level_folders:
@@ -133,13 +134,13 @@ def process_folder(root_folder):
                         elif os.path.isfile(full_path):
                             file_queue.append(full_path)
                 except PermissionError:
-                    print(f"❌ Permission denied accessing {folder}")
+                    errorMessages.append(f"❌ Permission denied accessing {folder}")
                     continue
 
             level += 1
 
     except Exception as e:
-        print(f"❌ Error during folder processing: {e}")
+        errorMessages.append(f"❌ Error during folder processing: {e}")
         db.rollback()
     finally:
         if isDBconnected:
@@ -147,6 +148,7 @@ def process_folder(root_folder):
             db.close()
             isDBconnected = False
             print("\n✅ Database connection closed.")
+    return errorMessages
 
 if __name__ == "__main__":
     if not isDBconnected:
