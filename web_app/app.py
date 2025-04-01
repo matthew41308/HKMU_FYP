@@ -5,12 +5,11 @@ from werkzeug.utils import secure_filename
 from controller.metaData_generation import process_folder
 from controller.create_useCase_diagram import export_to_json
 from model.json_for_useCase import get_json_for_useCase
-from werkzeug.utils import secure_filename
 from controller.ai_code_analysis import ai_code_analysis
 import shutil
 from controller.create_uml import generate_uml_controller
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "./")))
-from config.dbConfig import db_connect,reset_db,db,cursor,isDBconnected
+from config.dbConfig import db_connect, reset_db, db, cursor, isDBconnected
 
 # ✅ 設定 PlantUML JAR 檔案路徑
 PLANTUML_JAR_PATH = "./PlantUML/plantuml-1.2025.1.jar"  # **確保這個路徑正確**
@@ -19,7 +18,9 @@ OUTPUT_PNG = "output.png"
 
 # ✅ 設定 Flask
 app = Flask(__name__)
-UPLOAD_FOLDER = os.path.join(os.getcwd(), "uploads")
+
+# If you want your uploads to be persistent, point to your persistent disk path.
+UPLOAD_FOLDER = "/var/data/uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
@@ -31,7 +32,7 @@ client = openai.AzureOpenAI(
 )
 
 # ✅ 允許的檔案類型
-ALLOWED_EXTENSIONS = {"py", "js", "java", "cpp", "ts"}
+ALLOWED_EXTENSIONS = {"py"}
 
 # ✅ 定義合法的 component_type 和 dependency_type
 VALID_COMPONENT_TYPES = {"class", "function", "module", "external_library"}
@@ -50,19 +51,18 @@ def admin():
     return render_template("admin.html")
 
 @app.route("/reset_db", methods=["POST"])
-def reset_db():
-    global db,cursor,isDBconnected
-    status=reset_db()
+def reset_db_route():
+    global db, cursor, isDBconnected
+    status = reset_db()
     if not (status or isDBconnected):
         return jsonify({"error": "無法連接 MySQL"}), 500
     elif not status:
         return jsonify({"error": f"重置失敗"}), 500
 
-
 # 📌 **API: 重新建立資料表**
 @app.route("/initialize_db", methods=["POST"])
 def initialize_db():
-    global db,cursor,isDBconnected
+    global db, cursor, isDBconnected
     if not isDBconnected:
         # Get database connection
         db, cursor = db_connect()
@@ -71,8 +71,8 @@ def initialize_db():
 
     try:
         reset_db()
-        # Delete all files from Json_toAI folder
-        json_dir = "Json_toAI"
+        # Delete all files from Json_toAI folder in the persistent disk directory
+        json_dir = "/var/data/Json_toAI"
         if os.path.exists(json_dir):
             for filename in os.listdir(json_dir):
                 file_path = os.path.join(json_dir, filename)
@@ -80,7 +80,6 @@ def initialize_db():
                     if os.path.isfile(file_path) or os.path.islink(file_path):
                         os.unlink(file_path)
                     elif os.path.isdir(file_path):
-                        import shutil
                         shutil.rmtree(file_path)
                 except Exception as del_exc:
                     print(f"Failed to delete {file_path}. Reason: {del_exc}")
@@ -93,7 +92,7 @@ def initialize_db():
     finally:
         cursor.close()
         db.close()
-        isDBconnected=False
+        isDBconnected = False
         
 @app.route("/upload", methods=["POST"])
 def upload():
@@ -104,9 +103,9 @@ def upload():
 
     for file in uploaded_files:
         if file and allowed_file(file.filename):
-            # 👇 Preserve subfolder structure (example: "project1/main.py")
-            relative_path = file.filename  # this keeps subfolders if browser supports it
-            safe_path = secure_filename(relative_path.replace("\\", "/"))  # Windows fix
+            # Preserve subfolder structure
+            relative_path = file.filename  # this keeps subfolders if the browser supports it
+            safe_path = secure_filename(relative_path.replace("\\", "/"))
             full_save_path = os.path.join(app.config["UPLOAD_FOLDER"], safe_path)
 
             os.makedirs(os.path.dirname(full_save_path), exist_ok=True)
@@ -128,7 +127,7 @@ def analyse_folder():
       4. Sends TXT content to the AI platform.
     """
     try:
-        folder_path = os.path.join(app.config["UPLOAD_FOLDER"])
+        folder_path = app.config["UPLOAD_FOLDER"]
         if not os.path.isdir(folder_path):
             return jsonify({"error": f"Folder '{folder_path}' does not exist."}), 404
 
@@ -136,12 +135,12 @@ def analyse_folder():
 
         errorMessages = process_folder(folder_path)
         result = get_json_for_useCase(db, cursor)
-        project_name = request.get_data
+        project_name = request.get_data  # Verify this usage according to your needs.
         export_to_json(result, project_name)
         if errorMessages:
-            return jsonify({"message": "Please find the following error", "error": errorMessages}),500
+            return jsonify({"message": "Please find the following error", "error": errorMessages}), 500
         else:
-            return jsonify({"message": "✅ Analysis complete!","error":""}), 200
+            return jsonify({"message": "✅ Analysis complete!", "error": ""}), 200
 
     except Exception as e:
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
@@ -149,7 +148,7 @@ def analyse_folder():
 # 📌 **查詢分析結果 API**
 @app.route("/results", methods=["GET"])
 def get_results():
-    json_dir = "Json_toAI"
+    json_dir = "/var/data/Json_toAI"
     try:
         # List all files in the directory ending with .json
         json_files = [f for f in os.listdir(json_dir) if f.endswith(".json")]
@@ -173,14 +172,14 @@ def generate_uml():
 
 @app.route("/download_uml", methods=["GET"])
 def download_uml():
-    uml_path = os.path.abspath(OUTPUT_PNG)  # 確保 `output.png` 的完整路徑
+    uml_path = os.path.abspath(OUTPUT_PNG)
     if os.path.exists(uml_path):
         return send_file(uml_path, as_attachment=True, mimetype="image/png")
     return jsonify({"error": "UML diagram does not exist！"}), 404
 
 @app.route("/download_puml", methods=["GET"])
 def download_puml():
-    puml_path = os.path.abspath(OUTPUT_PUML)  # 確保 `output.puml` 的完整路徑
+    puml_path = os.path.abspath(OUTPUT_PUML)
     if os.path.exists(puml_path):
         return send_file(puml_path, as_attachment=True, mimetype="text/plain")
     return jsonify({"error": "PUML file does not exist！"}), 404
