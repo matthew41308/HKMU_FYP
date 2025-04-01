@@ -19,10 +19,14 @@ OUTPUT_PNG = "output.png"
 # ✅ 設定 Flask
 app = Flask(__name__)
 
-# If you want your uploads to be persistent, point to your persistent disk path.
+# Create folder for uploads on the persistent disk
 UPLOAD_FOLDER = "/var/data/uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+
+# Create Json_toAI folder on the persistent disk
+JSON_DIR = "/var/data/Json_toAI"
+os.makedirs(JSON_DIR, exist_ok=True)
 
 # ✅ 設定 Azure OpenAI
 client = openai.AzureOpenAI(
@@ -57,7 +61,7 @@ def reset_db_route():
     if not (status or isDBconnected):
         return jsonify({"error": "無法連接 MySQL"}), 500
     elif not status:
-        return jsonify({"error": f"重置失敗"}), 500
+        return jsonify({"error": "重置失敗"}), 500
 
 # 📌 **API: 重新建立資料表**
 @app.route("/initialize_db", methods=["POST"])
@@ -71,18 +75,19 @@ def initialize_db():
 
     try:
         reset_db()
-        # Delete all files from Json_toAI folder in the persistent disk directory
-        json_dir = "/var/data/Json_toAI"
-        if os.path.exists(json_dir):
-            for filename in os.listdir(json_dir):
-                file_path = os.path.join(json_dir, filename)
-                try:
-                    if os.path.isfile(file_path) or os.path.islink(file_path):
-                        os.unlink(file_path)
-                    elif os.path.isdir(file_path):
-                        shutil.rmtree(file_path)
-                except Exception as del_exc:
-                    print(f"Failed to delete {file_path}. Reason: {del_exc}")
+        # Ensure JSON_DIR exists in the persistent disk directory
+        if not os.path.exists(JSON_DIR):
+            os.makedirs(JSON_DIR, exist_ok=True)
+        # Delete all files from Json_toAI
+        for filename in os.listdir(JSON_DIR):
+            file_path = os.path.join(JSON_DIR, filename)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as del_exc:
+                print(f"Failed to delete {file_path}. Reason: {del_exc}")
         return jsonify({"message": "✅ All data tables have been created!"}), 200
 
     except Exception as e:
@@ -93,7 +98,7 @@ def initialize_db():
         cursor.close()
         db.close()
         isDBconnected = False
-        
+
 @app.route("/upload", methods=["POST"])
 def upload():
     uploaded_files = request.files.getlist("file")
@@ -115,7 +120,7 @@ def upload():
         "message": f"✅ {len(uploaded_files)} files uploaded successfully!",
         "uploaded_path": app.config["UPLOAD_FOLDER"]
     }), 200
-    
+
 @app.route("/analyse_folder", methods=["POST"])
 def analyse_folder():
     """
@@ -135,7 +140,7 @@ def analyse_folder():
 
         errorMessages = process_folder(folder_path)
         result = get_json_for_useCase(db, cursor)
-        project_name = request.get_data  # Verify this usage according to your needs.
+        project_name = request.get_data()  # Make sure you extract this correctly
         export_to_json(result, project_name)
         if errorMessages:
             return jsonify({"message": "Please find the following error", "error": errorMessages}), 500
@@ -144,19 +149,18 @@ def analyse_folder():
 
     except Exception as e:
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
-    
+
 # 📌 **查詢分析結果 API**
 @app.route("/results", methods=["GET"])
 def get_results():
-    json_dir = "/var/data/Json_toAI"
     try:
-        # List all files in the directory ending with .json
-        json_files = [f for f in os.listdir(json_dir) if f.endswith(".json")]
+        # List all files in the JSON_DIR ending with .json
+        json_files = [f for f in os.listdir(JSON_DIR) if f.endswith(".json")]
         if not json_files:
             return jsonify({"error": "No JSON file found in Json_toAI directory."}), 404
 
         # Assume there is only one JSON file, so pick the first one.
-        json_file = os.path.join(json_dir, json_files[0])
+        json_file = os.path.join(JSON_DIR, json_files[0])
         with open(json_file, "r", encoding="utf-8") as f:
             data = json.load(f)
             
