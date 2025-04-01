@@ -117,7 +117,6 @@
 
                 if (files.length === 0) {
                     alert("❌ Please select at least one file or folder before uploading！");
-                    document.getElementById("analyse").hidden=true
                     return;
                 }
 
@@ -137,15 +136,12 @@
                 .then(data => {
                     if (data.error) {
                         alert("❌ Upload failed：" + data.error);
-                        document.getElementById("analyse").hidden=true
                     } else {
                         alert("✅ " + data.message);
-                        document.getElementById("analyse").hidden=false
                     }
                 })
                 .catch(error => {
                     alert("❌ Error occurred while uploading：" + error);
-                    document.getElementById("analyse").hidden=true
                 });
             }
 
