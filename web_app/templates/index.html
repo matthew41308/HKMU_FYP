@@ -107,9 +107,7 @@
         </div>
  
         <script>
-            document.getElementById("uploadForm").addEventListener("submit", uploadForm());
-
-            function uploadForm(event)
+            document.getElementById("uploadForm").addEventListener("submit", () =>
             {
                 event.preventDefault();
                 const files = document.getElementById("fileInput").files;
@@ -144,6 +142,7 @@
                     alert("❌ Error occurred while uploading：" + error);
                 });
             }
+        )
 
             function analyse_folder()
             {
