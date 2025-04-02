@@ -45,7 +45,7 @@ def reset_db():
         # Get database connection
         db, cursor = db_connect()
         if not isDBconnected:
-            print(f"❌ pymysql 連接 MySQL 失敗: Connection could not be established")
+            print(f"❌ pymysql 連接 MySQL 失敗: {e}")
             return False
 
     try:
@@ -88,12 +88,12 @@ def get_mysql_password():
     return mysql_password
 
 config = {
-    'host': os.getenv("MYSQL_HOST", "mysql-6xgt"),
-    'user': 'mysql',  # or your MySQL user
-    'password': os.getenv("MYSQL_PASSWORD"),
+    'host': 'mysql-6xgt',   
+    'user': 'mysql',
+    'password': get_mysql_password(),  
     'database': 'cd_insight',
-    'port': 3306,
-    'cursorclass': pymysql.cursors.DictCursor,
+    'port': 3306,        
+    'cursorclass': pymysql.cursors.DictCursor, 
     'autocommit': True
 }
     
