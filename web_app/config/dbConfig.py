@@ -15,7 +15,7 @@ SSH_CONFIG = {
     'ssh_address_or_host': 'srv-cvmcbfs9c44c73ejoun0@ssh.oregon.render.com',  # SSH host address
     'ssh_port': 22,                      # SSH port, usually 22
     'ssh_username': 'root',             # SSH username
-    'ssh_pkey': '/opt/render/.ssh/mysql_key'   # Path to the private key file
+    'ssh_pkey': '../.ssh/render_key'   # Path to the private key file
 }
 
 def get_mysql_password():
