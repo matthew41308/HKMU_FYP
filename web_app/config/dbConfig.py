@@ -45,7 +45,7 @@ def reset_db():
         # Get database connection
         db, cursor = db_connect()
         if not isDBconnected:
-            print(f"❌ pymysql 連接 MySQL 失敗: {e}")
+            print(f"❌ pymysql 連接 MySQL 失敗: Connection could not be established")
             return False
 
     try:
