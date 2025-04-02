@@ -78,7 +78,7 @@
 
     <div id="analyse">
         <h1>📂 Start Analysing</h1>
-        <input type="text" id="ProjectName" name="ProjectName">
+        <input type="text" id="ProjectName" name="ProjectName" disabled>
         <button  onClick="analyse_folder()" >📤 Analyse</button>
     </div>
     
@@ -138,6 +138,7 @@
                         alert("❌ Upload failed：" + data.error);
                     } else {
                         alert("✅ " + data.message);
+                        document.getElementById("ProjectName").value=files[0].filename
                     }
                 })
                 .catch(error => {
