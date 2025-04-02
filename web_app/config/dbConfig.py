@@ -88,7 +88,7 @@ def get_mysql_password():
     return mysql_password
 
 config = {
-    'host': 'mysql-6xgt',   
+    'host': os.getenv("MYSQL_HOST"),   
     'user': 'mysql',
     'password': get_mysql_password(),  
     'database': 'cd_insight',
