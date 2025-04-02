@@ -98,4 +98,4 @@ config = {
 }
     
 if __name__=="__main__":
-    check_connection()
+    reset_db()
