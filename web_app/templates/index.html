@@ -109,8 +109,7 @@
         <script>
             document.getElementById("uploadForm").addEventListener("submit", uploadForm);
 
-            function uploadForm(event)
-            {
+            function uploadForm(event) {
                 event.preventDefault();
                 const files = document.getElementById("fileInput").files;
                 const formData = new FormData();
@@ -120,14 +119,11 @@
                     return;
                 }
 
-                // Detect if this is a folder upload (multiple files + webkitdirectory)
-                const isFolder = files.length > 1;
-
                 // Append all files
                 for (let i = 0; i < files.length; i++) {
                     formData.append("file", files[i]);
                 }
-    
+
                 fetch("/upload", {
                     method: "POST",
                     body: formData
@@ -138,7 +134,16 @@
                         alert("❌ Upload failed：" + data.error);
                     } else {
                         alert("✅ " + data.message);
-                        document.getElementById("ProjectName").value=files[0].filename
+                        
+                        // Get the root folder name using webkitRelativePath if available
+                        if (files[0].webkitRelativePath) {
+                            // The relative path may look like "rootFolder/subfolder/filename.ext"
+                            const rootFolder = files[0].webkitRelativePath.split("/")[0];
+                            document.getElementById("ProjectName").value = rootFolder;
+                        } else {
+                            // Fallback to the file name if webkitRelativePath is unavailable
+                            document.getElementById("ProjectName").value = files[0].name;
+                        }
                     }
                 })
                 .catch(error => {
