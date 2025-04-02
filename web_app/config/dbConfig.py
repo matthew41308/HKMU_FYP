@@ -88,12 +88,12 @@ def get_mysql_password():
     return mysql_password
 
 config = {
-    'host': os.getenv("MYSQL_HOST"),   
-    'user': 'mysql',
-    'password': get_mysql_password(),  
+    'host': os.getenv("MYSQL_HOST", "mysql-6xgt"),
+    'user': 'mysql',  # or your MySQL user
+    'password': os.getenv("MYSQL_PASSWORD"),
     'database': 'cd_insight',
-    'port': 3306,        
-    'cursorclass': pymysql.cursors.DictCursor, 
+    'port': 3306,
+    'cursorclass': pymysql.cursors.DictCursor,
     'autocommit': True
 }
     
