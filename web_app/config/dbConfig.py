@@ -14,35 +14,25 @@ def get_mysql_password():
     mysql_password = os.getenv('MYSQL_ROOT_PASSWORD')
     if mysql_password is None:
         raise EnvironmentError(
-            "Environment variable 'MYSQL_ROOT_PASSWORD' is not set. "
+            "Environment variable 'MYSQL_ROOT_PASSWORD' is not set."
         )
     return mysql_password
 
-def load_ssh_key(file_path="/etc/secrets/ssh_key"):
+def get_ssh_key_path():
     """
-    Load the SSH private key from a file.
-    
-    Args:
-        file_path (str): The path to the SSH key file.
-        
-    Returns:
-        str: The SSH key as a stripped string.
-        
-    Raises:
-        Exception: If the file cannot be read.
+    Verify that the SSH key file exists and return its path.
     """
-    try:
-        with open(file_path, 'r') as file:
-            return file.read().strip()  # Remove any extra whitespace or newlines
-    except Exception as e:
-        raise Exception(f"Failed to load SSH key from {file_path}: {e}")
+    key_path = '/etc/secrets/ssh_key'
+    if not os.path.isfile(key_path):
+        raise FileNotFoundError(f"SSH key file not found: {key_path}")
+    return key_path
 
 # SSH tunnel configuration (modify these values as needed)
 SSH_CONFIG = {
     'ssh_address_or_host': 'srv-cvmcbfs9c44c73ejoun0@ssh.oregon.render.com',  # SSH host address
     'ssh_port': 22,                      # SSH port, usually 22
     'ssh_username': 'root',              # SSH username
-    'ssh_key': load_ssh_key()            # Load the SSH key from the plain text file
+    'ssh_key': get_ssh_key_path()        # Provide the file path to the SSH private key
 }
 
 # MySQL connection configuration (initial values; host/port will be overridden after starting the tunnel)
@@ -69,12 +59,12 @@ def db_connect():
         )
         tunnel.start()
         print(f"✅ SSH tunnel established on local port: {tunnel.local_bind_port}")
-        
+
         # Update the MySQL connection config to use the local end of the SSH tunnel.
         config_local = config.copy()
         config_local['host'] = '127.0.0.1'
         config_local['port'] = tunnel.local_bind_port
-        
+
         print("🔹 Attempting to connect to MySQL via PyMySQL...")
         db = pymysql.connect(**config_local)
         cursor = db.cursor()
@@ -92,7 +82,6 @@ def db_connect():
 def check_connection():
     """
     Check if the database connection is alive.
-    
     Returns:
         bool: True if connection is alive, False otherwise.
     """
@@ -127,7 +116,7 @@ def reset_db():
         cursor.execute("DELETE FROM organizations;")
         # Re-enable foreign key checks
         cursor.execute("SET FOREIGN_KEY_CHECKS=1;")
-        
+
         db.commit()
         print({"message": "✅ Database has been reset successfully!"})
         return True
