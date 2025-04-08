@@ -11,10 +11,16 @@ tunnel = None
 isDBconnected = False
 
 def get_mysql_password():
-    mysql_password = os.getenv('MYSQL_ROOT_PASSWORD')
+    mysql_password = os.getenv('MYSQL_PASSWORD')
     if mysql_password is None:
-        raise EnvironmentError("Environment variable 'MYSQL_ROOT_PASSWORD' is not set.")
+        raise EnvironmentError("Environment variable 'MYSQL_PASSWORD' is not set.")
     return mysql_password
+
+def get_mysql_user():
+    mysql_user = os.getenv('MYSQL_USER')
+    if mysql_user is None:
+        raise EnvironmentError("Environment variable 'MYSQL_USER' is not set.")
+    return mysql_user
 
 def get_ssh_key_path():
     """
@@ -35,7 +41,7 @@ SSH_CONFIG = {
 # MySQL connection configuration (host/port will be overridden after starting the tunnel)
 config = {
     'host': 'mysql-pj6a',
-    'user': 'root',
+    'user': get_mysql_user(),
     'password': get_mysql_password(),
     'database': 'cd_insight',
     'port': 3306,
