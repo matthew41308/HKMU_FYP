@@ -101,7 +101,7 @@ def reset_db():
     global db, cursor, isDBconnected, tunnel
     if not isDBconnected:
         # Get database connection via SSH tunnel
-        db, cursor, tunnel = db_connect()
+        db, cursor = db_connect()
         if not isDBconnected:
             print("❌ PyMySQL connection to MySQL failed")
             return False
