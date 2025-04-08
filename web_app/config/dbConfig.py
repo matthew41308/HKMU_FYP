@@ -73,13 +73,13 @@ def db_connect():
         cursor = db.cursor()
         isDBconnected = True
         print("✅ PyMySQL connected to MySQL via the SSH tunnel!")
-        return db, cursor, tunnel
+        return db, cursor
     except pymysql.MySQLError as e:
         print(f"❌ PyMySQL connection failed: {e}")
-        return None, None, None
+        return None, None
     except Exception as e:
         print(f"❌ Failed to establish SSH tunnel: {e}")
-        return None, None, None
+        return None, None
 
 def check_connection():
     """
