@@ -110,10 +110,8 @@ def reset_db():
         # Disable foreign key checks before mass deletion
         cursor.execute("SET FOREIGN_KEY_CHECKS=0;")
         # Delete rows in the correct order based on dependencies
-        cursor.execute("DELETE FROM variableparametermapping;")
         cursor.execute("DELETE FROM methodparameters;")
         cursor.execute("DELETE FROM methods;")
-        cursor.execute("DELETE FROM componentdependencies;")
         cursor.execute("DELETE FROM components;")
         cursor.execute("DELETE FROM variables;")
         cursor.execute("DELETE FROM organizations;")
