@@ -13,9 +13,7 @@ isDBconnected = False
 def get_mysql_password():
     mysql_password = os.getenv('MYSQL_ROOT_PASSWORD')
     if mysql_password is None:
-        raise EnvironmentError(
-            "Environment variable 'MYSQL_ROOT_PASSWORD' is not set."
-        )
+        raise EnvironmentError("Environment variable 'MYSQL_ROOT_PASSWORD' is not set.")
     return mysql_password
 
 def get_ssh_key_path():
@@ -27,15 +25,14 @@ def get_ssh_key_path():
         raise FileNotFoundError(f"SSH key file not found: {key_path}")
     return key_path
 
-# SSH tunnel configuration (modify these values as needed)
 SSH_CONFIG = {
-    'ssh_address_or_host': 'srv-cvmcbfs9c44c73ejoun0@ssh.oregon.render.com',  # SSH host address
-    'ssh_port': 22,                      # SSH port, usually 22
-    'ssh_username': 'root',              # SSH username
-    'ssh_key': get_ssh_key_path()        # Provide the file path to the SSH private key
+    'ssh_address_or_host': 'ssh.oregon.render.com',  
+    'ssh_port': 22,
+    'ssh_username': 'srv-cvmcbfs9c44c73ejoun0',  
+    'ssh_key': get_ssh_key_path()  
 }
 
-# MySQL connection configuration (initial values; host/port will be overridden after starting the tunnel)
+# MySQL connection configuration (host/port will be overridden after starting the tunnel)
 config = {
     'host': 'mysql-pj6a',
     'user': 'root',
@@ -70,7 +67,6 @@ def db_connect():
         cursor = db.cursor()
         isDBconnected = True
         print("✅ PyMySQL connected to MySQL via the SSH tunnel!")
-        # Return the tunnel as well so that it can be closed when no longer needed.
         return db, cursor, tunnel
     except pymysql.MySQLError as e:
         print(f"❌ PyMySQL connection failed: {e}")
@@ -82,6 +78,7 @@ def db_connect():
 def check_connection():
     """
     Check if the database connection is alive.
+    
     Returns:
         bool: True if connection is alive, False otherwise.
     """
@@ -116,7 +113,7 @@ def reset_db():
         cursor.execute("DELETE FROM organizations;")
         # Re-enable foreign key checks
         cursor.execute("SET FOREIGN_KEY_CHECKS=1;")
-
+        
         db.commit()
         print({"message": "✅ Database has been reset successfully!"})
         return True
