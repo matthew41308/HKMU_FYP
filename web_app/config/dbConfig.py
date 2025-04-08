@@ -10,14 +10,6 @@ cursor = None
 tunnel = None
 isDBconnected = False
 
-# SSH tunnel configuration (modify these values as needed)
-SSH_CONFIG = {
-    'ssh_address_or_host': 'srv-cvmcbfs9c44c73ejoun0@ssh.oregon.render.com',  # SSH host address
-    'ssh_port': 22,                      # SSH port, usually 22
-    'ssh_username': 'root',             # SSH username
-    'ssh_pkey': "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIXRqgWthjgXsAyirLcHdI0WHPE82GLbC5ODrFpTYMD8 render-server-key"  
-}
-
 def get_mysql_password():
     mysql_password = os.getenv('MYSQL_ROOT_PASSWORD')
     if mysql_password is None:
@@ -26,14 +18,41 @@ def get_mysql_password():
         )
     return mysql_password
 
+def load_ssh_key(file_path="/etc/secrets/ssh_key"):
+    """
+    Load the SSH private key from a file.
+    
+    Args:
+        file_path (str): The path to the SSH key file.
+        
+    Returns:
+        str: The SSH key as a stripped string.
+        
+    Raises:
+        Exception: If the file cannot be read.
+    """
+    try:
+        with open(file_path, 'r') as file:
+            return file.read().strip()  # Remove any extra whitespace or newlines
+    except Exception as e:
+        raise Exception(f"Failed to load SSH key from {file_path}: {e}")
+
+# SSH tunnel configuration (modify these values as needed)
+SSH_CONFIG = {
+    'ssh_address_or_host': 'srv-cvmcbfs9c44c73ejoun0@ssh.oregon.render.com',  # SSH host address
+    'ssh_port': 22,                      # SSH port, usually 22
+    'ssh_username': 'root',              # SSH username
+    'ssh_key': load_ssh_key()            # Load the SSH key from the plain text file
+}
+
 # MySQL connection configuration (initial values; host/port will be overridden after starting the tunnel)
 config = {
-    'host': 'mysql-pj6a',   
+    'host': 'mysql-pj6a',
     'user': 'root',
-    'password': get_mysql_password(),  
+    'password': get_mysql_password(),
     'database': 'cd_insight',
-    'port': 3306,        
-    'cursorclass': pymysql.cursors.DictCursor, 
+    'port': 3306,
+    'cursorclass': pymysql.cursors.DictCursor,
     'autocommit': True
 }
 
@@ -45,7 +64,7 @@ def db_connect():
         tunnel = SSHTunnelForwarder(
             (SSH_CONFIG['ssh_address_or_host'], SSH_CONFIG['ssh_port']),
             ssh_username=SSH_CONFIG['ssh_username'],
-            ssh_pkey=SSH_CONFIG['ssh_pkey'],
+            ssh_pkey=SSH_CONFIG['ssh_key'],
             remote_bind_address=('127.0.0.1', 3306)
         )
         tunnel.start()
@@ -73,6 +92,7 @@ def db_connect():
 def check_connection():
     """
     Check if the database connection is alive.
+    
     Returns:
         bool: True if connection is alive, False otherwise.
     """
