@@ -142,6 +142,7 @@ def analyse_folder():
         result = get_json_for_useCase(db, cursor)
         project_name = request.get_data()  # Make sure you extract this correctly
         export_to_json(result, project_name)
+        errorMessages = [msg for msg in errorMessages if msg]
         if errorMessages:
             return jsonify({"message": "Please find the following error", "error": errorMessages}), 500
         else:
