@@ -1,215 +1,31 @@
 <!DOCTYPE html>
- <html lang="zh-HK">
- <head>
-     <meta charset="UTF-8">
-     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-     <title>Code Analysis Tool</title>
-     <style>
-         body {
-             font-family: Arial, sans-serif;
-             background-color: #f4f4f4;
-             margin: 0;
-             padding: 20px;
-         }
- 
-         .container {
-             display: flex;
-             justify-content: space-between;
-             gap: 20px;
-         }
- 
-         .card {
-             background: white;
-             padding: 20px;
-             border-radius: 10px;
-             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-         }
- 
-         .half-width {
-             flex: 1;
-             max-width: 48%;
-         }
- 
-         h1, h2 {
-             color: #333;
-         }
- 
-         button {
-             background: #007bff;
-             color: white;
-             border: none;
-             padding: 10px 15px;
-             border-radius: 5px;
-             cursor: pointer;
-             margin-top: 10px;
-         }
- 
-         button:hover {
-             background: #0056b3;
-         }
- 
-         /* 限制 JSON 區域的大小 */
-         #results {
-             background: #272822;
-             color: #f8f8f2;
-             padding: 10px;
-             height: 300px;
-             overflow-y: auto;
-             white-space: pre-wrap;
-             border-radius: 5px;
-             font-size: 14px;
-         }
- 
-         /* UML 圖片區域 */
-         #umlImage {
-             border: 1px solid #000;
-             max-width: 100%;
-             display: block;
-             margin-top: 10px;
-         }
-     </style>
-     </head>
-     <body>
-      <h1>📂 Upload Code</h1>
-      <form id="uploadForm" enctype="multipart/form-data">
-        <input type="file" id="fileInput" name="file" webkitdirectory directory multiple>
-          <button type="submit">📤 Upload</button>
-      </form>
-
-    <div id="analyse">
-        <h1>📂 Start Analysing</h1>
-        <input type="text" id="ProjectName" name="ProjectName" disabled>
-        <button  onClick="analyse_folder()" >📤 Analyse</button>
-    </div>
-    
-      <div class="container">
-          <!-- 分析結果 -->
-          <div class="card half-width">
-              <h2>📊 Analysis Results</h2>
-              <button onclick="fetchResults()">🔍 Show Results</button>
-              <pre id="results">Waiting for analysis results...</pre>
-          </div>
-          
-          <!-- UML 圖 -->
-          <div class="card half-width">
-              <h2>🖼️ UML Diagram</h2>
-              <label for="diagramType">Select Diagram:</label>
-              <select id="diagramType">
-                  <option value="use case diagram">Use Case Diagram</option>
-                  <option value="sequence diagram">Sequence Diagram</option>
-                  <option value="class diagram">Class Diagram</option>
-              </select>
-              <button onclick="generateUML()">⚙️ Generate UML</button>
-              <button onclick="downloadUML()">📥 Download Diagram</button>
-              <button onclick="downloadPUML()">📝 Download PUML.file</button>
-              <img id="umlImage" src="" alt="UML images will be displayed here">
-          </div>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔐 User Login - Code Analysis Tool</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="login-container">
+    <div class="card">
+      <h1>🔐 User Login</h1>
+      <form id="loginForm" action="/login" method="POST">
+        <div>
+          <label for="user_name">Username:</label>
+          <input type="text" id="user_name" name="user_name" placeholder="Enter your username" required>
         </div>
- 
-        <script>
-            document.getElementById("uploadForm").addEventListener("submit", uploadForm);
+        <div>
+          <label for="user_pwd">Password:</label>
+          <input type="user_pwd" id="user_pwd" name="user_pwd" placeholder="Enter your password" required>
+        </div>
+        <button type="submit">Login</button>
+      </form>
+    </div>
+  </div>
+  
+  <script>
 
-            function uploadForm(event) {
-                event.preventDefault();
-                const files = document.getElementById("fileInput").files;
-                const formData = new FormData();
-
-                if (files.length === 0) {
-                    alert("❌ Please select at least one file or folder before uploading！");
-                    return;
-                }
-
-                // Append all files
-                for (let i = 0; i < files.length; i++) {
-                    formData.append("file", files[i]);
-                }
-
-                fetch("/upload", {
-                    method: "POST",
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        alert("❌ Upload failed：" + data.error);
-                    } else {
-                        alert("✅ " + data.message);
-                        
-                        // Get the root folder name using webkitRelativePath if available
-                        if (files[0].webkitRelativePath) {
-                            // The relative path may look like "rootFolder/subfolder/filename.ext"
-                            const rootFolder = files[0].webkitRelativePath.split("/")[0];
-                            document.getElementById("ProjectName").value = rootFolder;
-                        } else {
-                            // Fallback to the file name if webkitRelativePath is unavailable
-                            document.getElementById("ProjectName").value = files[0].name;
-                        }
-                    }
-                })
-                .catch(error => {
-                    alert("❌ Error occurred while uploading：" + error);
-                });
-            }
-
-            function analyse_folder()
-            {
-                fetch("/analyse_folder", {
-                    method: "POST",
-                })
-                .then(res => res.json())
-                .then(res => {
-                    if (res.error) {
-                        alert("❌ Analysis failed: " + res.error);
-                    } else {
-                        alert("✅ Analysis complete!");
-                        fetchResults();
-                    }
-                })
-                .catch(err => {
-                    alert("❌ Error analyzing: " + err);
-                });
-            }
-    
-            function fetchResults() {
-                fetch('/results')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById("results").textContent = JSON.stringify(data, null, 2);
-                })
-                .catch(error => {
-                    alert("❌ Failed to obtain analysis results：" + error);
-                });
-            }
-    
-            function generateUML() {
-                const diagramType = document.getElementById("diagramType").value;
-                const formData = new FormData();
-                formData.append("document_type", diagramType);
-
-                fetch('/generate_uml', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error("❌ Generate UML failed!");
-                    }
-                    return response.blob();
-                })
-                .then(blob => {
-                    document.getElementById("umlImage").src = URL.createObjectURL(blob);
-                    alert("✅ UML diagram generated!");
-                })
-                .catch(error => {
-                    alert(error.message);
-                });
-            }
-            function downloadUML() {
-            window.location.href = "/download_uml";
-            }
-            function downloadPUML() {
-                window.location.href = "/download_puml";
-              }
-            </script>
-            </body>
-  </html>
+  </script>
+</body>
+</html>

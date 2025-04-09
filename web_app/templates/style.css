@@ -1,0 +1,72 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 20px;
+}
+
+/* Container for non-login pages */
+.container {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+/* Card styles */
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Half-width for container children */
+.half-width {
+    flex: 1;
+    max-width: 48%;
+}
+
+h1, h2 {
+    color: #333;
+}
+
+/* Button styles */
+button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+button:hover {
+    background: #0056b3;
+}
+
+#results {
+    background: #272822;
+    color: #f8f8f2;
+    padding: 10px;
+    height: 300px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+#umlImage {
+    border: 1px solid #000;
+    max-width: 100%;
+    display: block;
+    margin-top: 10px;
+}
+
+/* Center the login page vertically and horizontally */
+.login-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}

@@ -8,6 +8,8 @@ from model.json_for_useCase import get_json_for_useCase
 from controller.ai_code_analysis import ai_code_analysis
 import shutil
 from controller.create_uml import generate_uml_controller
+from model.user_model import login_verification
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "./")))
 from config.dbConfig import db_connect, reset_db, db, cursor, isDBconnected
 
@@ -18,7 +20,7 @@ OUTPUT_PNG = "output.png"
 
 # ✅ 設定 Flask
 app = Flask(__name__)
-
+app.secret_key=os.getenv("FLASK_SECRET_KEY")
 # Create folder for uploads on the persistent disk
 UPLOAD_FOLDER = "/var/data/uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -188,6 +190,15 @@ def download_puml():
     if os.path.exists(puml_path):
         return send_file(puml_path, as_attachment=True, mimetype="text/plain")
     return jsonify({"error": "PUML file does not exist！"}), 404
+
+@app.route("/login", methods=["POST"])
+def login():
+    user_name = request.form.get("user_name")
+    user_pwd = request.form.get("user_pwd")
+    if login_verification(user_name, user_pwd):
+        return render_template("main.html", user_name=user_name)
+    else:
+        return jsonify({"success": False, "error": "Invalid username or password."}), 401
 
 if __name__ == "__main__":
     app.run(debug=True)
