@@ -6,9 +6,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 from config.dbConfig import db_connect,db,cursor,isDBconnected
 
 def login_verification(user_name, user_pwd):
+    global db, cursor
     if not isDBconnected:
-        db_connect()
-        
+        db, cursor = db_connect()
+
     if(user_name == None or user_pwd == None):
         return False
     
