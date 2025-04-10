@@ -35,6 +35,8 @@ def generate_uml_controller(document_type: str):
         )
 
         plantuml_code = response.choices[0].message.content.strip()
+        if plantuml_code.strip() == "0":
+            return jsonify({"error": "AI determines that this file is not a valid technical document and cannot generate UML"}), 400
         plantuml_code = plantuml_code.replace("```plantuml", "").replace("```", "").strip()
         if not plantuml_code.startswith("@startuml"):
             plantuml_code = "@startuml\n" + plantuml_code + "\n@enduml"

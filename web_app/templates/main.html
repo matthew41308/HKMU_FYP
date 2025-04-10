@@ -36,7 +36,12 @@
                   <option value="use case diagram">Use Case Diagram</option>
                   <option value="sequence diagram">Sequence Diagram</option>
                   <option value="class diagram">Class Diagram</option>
+                  <option value="others">Others</option>
               </select>
+              <div id="customTypeContainer" style="display: none; margin-top: 10px;">
+                <label for="customType">Please specify document type:</label>
+                <input type="text" id="customType" placeholder="e.g. Deployment Overview" />
+              </div>
               <button onclick="generateUML()">⚙️ Generate UML</button>
               <button onclick="downloadUML()">📥 Download Diagram</button>
               <button onclick="downloadPUML()">📝 Download PUML.file</button>
@@ -122,7 +127,16 @@
             function generateUML() {
                 const diagramType = document.getElementById("diagramType").value;
                 const formData = new FormData();
-                formData.append("document_type", diagramType);
+                let documentType = document.getElementById("diagramType").value;
+                if (documentType === "others") {
+                const custom = document.getElementById("customType").value.trim();
+                if (!custom) {
+                    alert("❌ Please enter a custom document type.");
+                    return;
+                }
+                documentType = custom;
+                }
+                formData.append("document_type", documentType);
 
                 fetch('/generate_uml', {
                     method: 'POST',
@@ -141,6 +155,15 @@
                 .catch(error => {
                     alert(error.message);
                 });
+            }
+            function toggleCustomInput() {
+                const selected = document.getElementById("diagramType").value;
+                const customContainer = document.getElementById("customTypeContainer");
+                if (selected === "others") {
+                    customContainer.style.display = "block";
+                } else {
+                    customContainer.style.display = "none";
+                }
             }
             function downloadUML() {
             window.location.href = "/download_uml";
