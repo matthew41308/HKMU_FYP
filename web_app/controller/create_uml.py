@@ -21,7 +21,7 @@ def generate_uml_controller(document_type: str):
         with open(txt_path, "r", encoding="utf-8") as f:
             exported_text = f.read()
 
-        full_prompt = prompt_template + exported_text
+        full_prompt = f"Please help me generate this document type: {document_type}. If it is not a technical document for project management, please respond with 0 only.\n\n" + prompt_template + exported_text
 
         client = get_openai()
         response = client.chat.completions.create(
@@ -34,10 +34,11 @@ def generate_uml_controller(document_type: str):
             max_tokens=4096
         )
 
-        plantuml_code = response.choices[0].message.content.strip()
-        if plantuml_code.strip() == "0":
-            return jsonify({"error": "AI determines that this file is not a valid technical document and cannot generate UML"}), 400
-        plantuml_code = plantuml_code.replace("```plantuml", "").replace("```", "").strip()
+        ai_reply = response.choices[0].message.content.strip()
+        if ai_reply == "0":
+            return jsonify({"error": "AI determines this is not a valid technical document"}), 400
+
+        plantuml_code = ai_reply.replace("```plantuml", "").replace("```", "").strip()
         if not plantuml_code.startswith("@startuml"):
             plantuml_code = "@startuml\n" + plantuml_code + "\n@enduml"
 
