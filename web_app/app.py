@@ -64,9 +64,9 @@ def login():
         app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
         app.config["JSON_DIR"]=JSON_DIR
         if not os.path.exists(UPLOAD_FOLDER):
-            os.makedirs(os.path.dirname(UPLOAD_FOLDER), exist_ok=True)
+            os.makedirs(UPLOAD_FOLDER, exist_ok=True)
         if not os.path.exists(JSON_DIR):
-            os.makedirs(os.path.dirname(JSON_DIR), exist_ok=True)
+            os.makedirs(JSON_DIR, exist_ok=True)
         return render_template("main.html", user_name=user_name)
     else:
         user_name=None
@@ -139,8 +139,6 @@ def upload():
             relative_path = file.filename  # this keeps subfolders if the browser supports it
             safe_path = secure_filename(relative_path.replace("\\", "/"))
             full_save_path = os.path.join(app.config["UPLOAD_FOLDER"], safe_path)
-
-            os.makedirs(os.path.dirname(full_save_path), exist_ok=True)
             file.save(full_save_path)
 
     return jsonify({
