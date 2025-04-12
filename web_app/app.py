@@ -17,18 +17,16 @@ from config.dbConfig import db_connect, reset_db, db, cursor, isDBconnected
 PLANTUML_JAR_PATH = "./PlantUML/plantuml-1.2025.1.jar"  # **確保這個路徑正確**
 OUTPUT_PUML = "output.puml"
 OUTPUT_PNG = "output.png"
-
+is_login=False
+user_name=None
 # ✅ 設定 Flask
 app = Flask(__name__)
 app.secret_key=os.getenv("FLASK_SECRET_KEY")
 # Create folder for uploads on the persistent disk
-UPLOAD_FOLDER = "/var/data/uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-
+USERS_FOLDER="/var/data/users"
+UPLOAD_FOLDER=""
 # Create Json_toAI folder on the persistent disk
-JSON_DIR = "/var/data/Json_toAI"
-os.makedirs(JSON_DIR, exist_ok=True)
+JSON_DIR = ""
 
 # ✅ 設定 Azure OpenAI
 client = openai.AzureOpenAI(
@@ -51,6 +49,30 @@ def allowed_file(filename):
 @app.route("/")
 def index():
     return render_template("index.html")
+
+@app.route("/login", methods=["POST"])
+def login():
+    global user_name,UPLOAD_FOLDER,USERS_FOLDER,JSON_DIR,app
+    user_name = request.form.get("user_name")
+    user_pwd = request.form.get("user_pwd")
+    global is_login
+    if login_verification(user_name, user_pwd):
+        is_login=True
+        UPLOAD_FOLDER = f"{USERS_FOLDER}/{user_name}/uploads"
+        # Create Json_toAI folder on the persistent disk
+        JSON_DIR = f"{USERS_FOLDER}/{user_name}/Json_toAI"
+        app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+        app.config["JSON_DIR"]=JSON_DIR
+        if not os.path.exists(UPLOAD_FOLDER):
+            os.makedirs(os.path.dirname(UPLOAD_FOLDER), exist_ok=True)
+        if not os.path.exists(JSON_DIR):
+            os.makedirs(os.path.dirname(JSON_DIR), exist_ok=True)
+        return render_template("main.html", user_name=user_name)
+    else:
+        user_name=None
+        is_login=False
+        return jsonify({"success": False, "error": "Invalid username or password."}), 401
+
 
 @app.route("/admin")
 def admin():
@@ -103,6 +125,9 @@ def initialize_db():
 
 @app.route("/upload", methods=["POST"])
 def upload():
+    global is_login,user_name
+    if not is_login:
+        return render_template("index.html")
     uploaded_files = request.files.getlist("file")
 
     if not uploaded_files:
@@ -133,6 +158,10 @@ def analyse_folder():
       3. Exports metadata (JSON, GZ, TXT).
       4. Sends TXT content to the AI platform.
     """
+    global is_login,app
+    if not is_login:
+        return render_template("index.html")
+    
     try:
         folder_path = app.config["UPLOAD_FOLDER"]
         if not os.path.isdir(folder_path):
@@ -142,8 +171,8 @@ def analyse_folder():
 
         errorMessages = process_folder(folder_path)
         result = get_json_for_useCase(db, cursor)
-        project_name = request.get_data()  # Make sure you extract this correctly
-        export_to_json(result, project_name)
+        project_name = request.get_data()  
+        export_to_json(result, project_name,app.config["JSON_DIR"])
         errorMessages = [msg for msg in errorMessages if msg]
         if errorMessages:
             return jsonify({"message": "Please find the following error", "error": errorMessages}), 500
@@ -156,6 +185,7 @@ def analyse_folder():
 # 📌 **查詢分析結果 API**
 @app.route("/results", methods=["GET"])
 def get_results():
+    global JSON_DIR
     try:
         # List all files in the JSON_DIR ending with .json
         json_files = [f for f in os.listdir(JSON_DIR) if f.endswith(".json")]
@@ -191,14 +221,6 @@ def download_puml():
         return send_file(puml_path, as_attachment=True, mimetype="text/plain")
     return jsonify({"error": "PUML file does not exist！"}), 404
 
-@app.route("/login", methods=["POST"])
-def login():
-    user_name = request.form.get("user_name")
-    user_pwd = request.form.get("user_pwd")
-    if login_verification(user_name, user_pwd):
-        return render_template("main.html", user_name=user_name)
-    else:
-        return jsonify({"success": False, "error": "Invalid username or password."}), 401
 
 if __name__ == "__main__":
     app.run(debug=True)

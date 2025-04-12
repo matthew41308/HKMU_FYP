@@ -7,12 +7,11 @@ from model.json_for_useCase import get_json_for_useCase
 import json
 from datetime import datetime
 
-def export_to_json(data, project_name):
+def export_to_json(data, project_name,json_dir):
     if data is None:
         print("No data to export")
         return
 
-    json_dir = "/var/data/Json_toAI"
     if not os.path.exists(json_dir):
         os.makedirs(json_dir)
         print(f"Created directory: {json_dir}")
@@ -99,4 +98,4 @@ if __name__=="__main__":
     # Print summary of the data
     print_data(result)
     project_name = "library_management"
-    export_to_json(result, project_name)
+    #export_to_json(result, project_name)
