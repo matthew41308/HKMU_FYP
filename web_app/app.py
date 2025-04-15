@@ -125,20 +125,31 @@ def initialize_db():
 
 @app.route("/upload", methods=["POST"])
 def upload():
-    global is_login,user_name
+    global is_login, user_name  # make sure these globals are defined elsewhere
     if not is_login:
         return render_template("index.html")
+    
     uploaded_files = request.files.getlist("file")
-
     if not uploaded_files:
         return jsonify({"error": "No files received"}), 400
 
     for file in uploaded_files:
         if file and allowed_file(file.filename):
-            # Preserve subfolder structure
-            relative_path = file.filename  # this keeps subfolders if the browser supports it
-            safe_path = secure_filename(relative_path.replace("\\", "/"))
+            # Use webkitRelativePath if it exists for preserving folder structure.
+            relative_path = (
+                file.webkitRelativePath
+                if hasattr(file, "webkitRelativePath") and file.webkitRelativePath
+                else file.filename
+            )
+            # Standardize the path delimiters to forward slash.
+            relative_path = relative_path.replace("\\", "/")
+            # Split the path into its components, then secure each part.
+            parts = [secure_filename(part) for part in relative_path.split("/") if part]
+            # Reconstruct the path preserving the directory structure.
+            safe_path = os.path.join(*parts)
             full_save_path = os.path.join(app.config["UPLOAD_FOLDER"], safe_path)
+            # Create directory structure if it doesn't exist.
+            os.makedirs(os.path.dirname(full_save_path), exist_ok=True)
             file.save(full_save_path)
 
     return jsonify({
