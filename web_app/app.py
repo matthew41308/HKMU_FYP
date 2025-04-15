@@ -179,7 +179,7 @@ def analyse_folder():
         print(f"✅ Starting analysis on folder: {folder_path}")
 
         errorMessages = process_folder(folder_path)
-        result = get_json_for_useCase(db, cursor)
+        result = get_json_for_useCase()
         project_name = request.get_data()  
         export_to_json(result, project_name,app.config["JSON_DIR"])
         errorMessages = [msg for msg in errorMessages if msg]

@@ -1,14 +1,17 @@
 import pymysql
 import sys
 import os
+from config.dbConfig import db_connect, db, cursor, isDBconnected
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
-def get_json_for_useCase(db, cursor):
+def get_json_for_useCase():
     """
     Fetch all data from components, methods, method parameters, and variables tables
     Returns a dictionary containing all the data
     """
+    global cursor
     if cursor is None:
+        db,cursor = db_connect()
         print("❌ Failed to establish database connection")
         return None
 
