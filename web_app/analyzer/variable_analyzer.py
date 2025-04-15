@@ -269,10 +269,13 @@ class VariableAnalyzer(ast.NodeVisitor):
             self.visit(child)
 
 def variable_analyzer(code: str) -> Dict:
-    tree = ast.parse(code)
-    analyzer = VariableAnalyzer()
-    analyzer.visit(tree)
-    
+    try:
+        tree = ast.parse(code)
+        analyzer = VariableAnalyzer()
+        analyzer.visit(tree)
+    except Exception as parse_err:    
+        print(f"Ignored parsing error in variable analyzer: {parse_err}")
+
     return {
         'variables': [asdict(v) for v in analyzer.variables],
         'usages': [asdict(u) for u in analyzer.usages],

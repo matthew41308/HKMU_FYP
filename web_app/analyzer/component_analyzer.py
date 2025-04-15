@@ -104,14 +104,24 @@ class ClassAnalyzer(ast.NodeVisitor):
 
 def class_analyzer(code: str, file_path: str):  # Modified to accept file_path
     """ Parse code and return components & dependencies with organization info """
-    tree = ast.parse(code)
-    analyzer = ClassAnalyzer(file_path)  # Pass file_path to analyzer
-    analyzer.visit(tree)
-
+    try:
+        tree = ast.parse(code)
+    except Exception as parse_err:
+        print(f"Ignored parsing error in file {file_path}: {parse_err}")
+        # Return a default result with an empty structure for components and dependencies
+        return {'components': [], 'dependencies': [], 'file_location': file_path}
+    
+    analyzer = ClassAnalyzer(file_path)
+    
+    try:
+        analyzer.visit(tree)
+    except Exception as visitor_err:
+        print(f"Ignored visitor error in file {file_path}: {visitor_err}")
+    
     return {
         'components': [asdict(c) for c in analyzer.components],
         'dependencies': [asdict(d) for d in analyzer.dependencies],
-        'file_location':file_path
+        'file_location': file_path
     }
 
 def analyze_class(file_location: str):

@@ -127,13 +127,20 @@ class MethodAnalyzer(ast.NodeVisitor):
         self.generic_visit(node)
 
 def method_analyzer(code: str) -> Dict:
-    tree = ast.parse(code)
-    analyzer = MethodAnalyzer()
-    analyzer.visit(tree)
+    try:
+        tree = ast.parse(code)
+    except Exception as parse_err:
+        print(f"Ignored parsing error in method analyzer: {parse_err}")
+        return {'methods': []}
     
-    return {
-        'methods': [asdict(m) for m in analyzer.methods]
-    }
+    analyzer = MethodAnalyzer()
+    
+    try:
+        analyzer.visit(tree)
+    except Exception as visitor_err:
+        print(f"Ignored visitor error in method analyzer: {visitor_err}")
+    
+    return {'methods': [asdict(m) for m in analyzer.methods]}
 
 def analyze_method(file_location: str):
     with open(file_location,"r") as f:

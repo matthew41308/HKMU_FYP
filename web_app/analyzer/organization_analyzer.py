@@ -68,7 +68,10 @@ def analyze_organization(root_path: str) -> dict:
     Returns:
         dict: Dictionary containing a list of organization information.
     """
-    organizations = dfs_collect_orgs(root_path, root_path)
+    try:
+        organizations = dfs_collect_orgs(root_path, root_path)
+    except Exception as parse_err:
+        print(f"Ignored parsing error in organization analyzer: {parse_err}")
     return {"organizations": organizations}
 
 if __name__ == "__main__":
