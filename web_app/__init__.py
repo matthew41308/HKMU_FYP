@@ -18,7 +18,6 @@ def init_app():
     app.config['cursor'] = cursor
     app.config["UPLOAD_FOLDER"] = "/var/data/users"
     app.config["JSON_DIR"] = ""
-    app.config["PLANTUML_JAR_PATH"]="./PlantUML/plantuml-1.2025.1.jar"
     app.config["OUTPUT_PUML"] = "output.puml"
     app.config["OUTPUT_PNG"] = "output.png"
     app.config["is_login"] = False

@@ -4,7 +4,7 @@ import gzip
 import re
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 from flask import current_app
-from web_app.model.json_for_useCase import get_json_for_useCase
+from model.json_for_useCase import get_json_for_useCase
 import json
 from datetime import datetime
 
@@ -99,7 +99,7 @@ def print_data(data):
 
 if __name__=="__main__":
     db=current_app.config["db"]
-    cursor = current_app.config["cursor"]
+    cursor = current_app.config['cursor']
     result = get_json_for_useCase(db, cursor)
     # Print summary of the data
     print_data(result)

@@ -30,7 +30,6 @@
               <pre id="results">Waiting for analysis results...</pre>
           </div>
           
-          <!-- UML 圖 -->
           <div class="card half-width">
               <h2>🖼️ UML Diagram</h2>
               <label for="document_type">Select Diagram:</label>
@@ -52,6 +51,8 @@
         </div>
  
         <script>
+            let umlBlob = null;
+            let pumlText = '';
             function startLoading() 
             {
                 // Disable all buttons.
@@ -163,20 +164,17 @@
     
             function generateUML() 
             {
-                const document_type = document.getElementById("document_type").value;
-                if (!document_type) 
-                {
+                let document_type = document.getElementById("document_type").value;
+                if (!document_type) {
                     alert("❌ Please select document type.");
                     return;
                 }
-                
-                if (document_type === "others") 
-                {
+
+                if (document_type === "others") {
                     document_type = document.getElementById("customType").value.trim();
-                    if (!document_type) 
-                    {
-                        alert("❌ Please enter a custom document type.");
-                        return;
+                    if (!document_type) {
+                    alert("❌ Please enter a custom document type.");
+                    return;
                     }
                 }
 
@@ -184,18 +182,34 @@
                 const formData = new FormData();
                 formData.append("document_type", document_type);
 
-                fetch('/generate_uml', {
-                    method: 'POST',
+                fetch("/generate_uml", {
+                    method: "POST",
                     body: formData
                 })
                 .then(response => {
                     if (!response.ok) {
                         throw new Error("❌ Generate UML failed!");
                     }
-                    return response.blob();
+                    // Expecting a JSON response with keys "png" (base64 image) and "puml"
+                    return response.json();
                 })
-                .then(blob => {
-                    document.getElementById("umlImage").src = URL.createObjectURL(blob);
+                .then(data => {
+                    // Convert base64 PNG to Blob
+                    const base64Data = data.png;
+                    const byteCharacters = atob(base64Data);
+                    const byteNumbers = new Array(byteCharacters.length);
+                    for (let i = 0; i < byteCharacters.length; i++) {
+                        byteNumbers[i] = byteCharacters.charCodeAt(i);
+                    }
+                    const byteArray = new Uint8Array(byteNumbers);
+                    umlBlob = new Blob([byteArray], { type: "image/png" });
+
+                    // Update the image element with the generated UML diagram.
+                    document.getElementById("umlImage").src = URL.createObjectURL(umlBlob);
+
+                    // Store the PUML text generated on the server.
+                    pumlText = data.puml;
+
                     alert("✅ UML diagram generated!");
                 })
                 .catch(error => {
@@ -205,6 +219,7 @@
                     stopLoading();
                 });
             }
+
             function toggleCustomInput() {
                 const selected = document.getElementById("document_type").value;
                 const customContainer = document.getElementById("customTypeContainer");
@@ -214,12 +229,39 @@
                     customContainer.style.display = "none";
                 }
             }
-            function downloadUML() {
-            window.location.href = "/download_uml";
+
+            function downloadUML() 
+            {
+                if (!umlBlob) 
+                {
+                    alert("No UML diagram has been generated yet.");
+                    return;
+                }
+                const url = URL.createObjectURL(umlBlob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "uml_diagram.png";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
             }
-            function downloadPUML() {
-                window.location.href = "/download_puml";
-              }
+
+            function downloadPUML() 
+            {
+                if (!pumlText) 
+                {
+                    alert("No PUML content available.");
+                    return;
+                }
+                const blob = new Blob([pumlText], { type: "text/plain" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "diagram.puml";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
             </script>
             </body>
   </html>
