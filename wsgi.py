@@ -205,7 +205,7 @@ def generate_uml():
         return redirect("/")
     
     document_type = request.form.get("document_type")
-    # Directly return the JSON response from generate_uml_controller
+
     return generate_uml_controller(document_type, app.config["JSON_DIR"])
 
 @app.route("/download_uml", methods=["GET"])

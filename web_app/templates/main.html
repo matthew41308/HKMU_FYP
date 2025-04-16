@@ -44,15 +44,15 @@
                 <input type="text" id="customType" placeholder="e.g. Work Flow Diagram" />
               </div>
               <button onclick="generateUML()">⚙️ Generate UML</button>
-              <button onclick="downloadUML()">📥 Download Diagram</button>
-              <button onclick="downloadPUML()">📝 Download PUML.file</button>
-              <img id="umlImage" src="" alt="UML images will be displayed here">
+              <button onclick="downloadUML()">📥 Download Diagram (PDF)/button>
+              <button onclick="downloadDOT()">📝 Download DOT file</button>
+              <embed id="umlPdfViewer" src="" type="application/pdf" style="width: 100%; height: 600px;" />
           </div>
         </div>
  
         <script>
-            let umlBlob = null;
-            let pumlText = '';
+            let pdfBlob; 
+            let dotText; 
             function startLoading() 
             {
                 // Disable all buttons.
@@ -173,8 +173,8 @@
                 if (document_type === "others") {
                     document_type = document.getElementById("customType").value.trim();
                     if (!document_type) {
-                    alert("❌ Please enter a custom document type.");
-                    return;
+                        alert("❌ Please enter a custom document type.");
+                        return;
                     }
                 }
 
@@ -188,27 +188,29 @@
                 })
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error("❌ Generate UML failed: "+response.error);
+                        return response.json().then(errData => {
+                            throw new Error("❌ Generate UML failed: " + errData.error);
+                        });
                     }
-                    // Expecting a JSON response with keys "png" (base64 image) and "puml"
+                    // Expecting a JSON response with keys "pdf" (base64 encoded PDF) and "dot"
                     return response.json();
                 })
                 .then(data => {
-                    // Convert base64 PNG to Blob
-                    const base64Data = data.png;
+                    // Decode base64 PDF to a Blob.
+                    const base64Data = data.pdf;
                     const byteCharacters = atob(base64Data);
                     const byteNumbers = new Array(byteCharacters.length);
                     for (let i = 0; i < byteCharacters.length; i++) {
                         byteNumbers[i] = byteCharacters.charCodeAt(i);
                     }
                     const byteArray = new Uint8Array(byteNumbers);
-                    umlBlob = new Blob([byteArray], { type: "image/png" });
+                    pdfBlob = new Blob([byteArray], { type: "application/pdf" });
 
-                    // Update the image element with the generated UML diagram.
-                    document.getElementById("umlImage").src = URL.createObjectURL(umlBlob);
+                    // Update the embed element with the generated UML PDF diagram.
+                    document.getElementById("umlPdfViewer").src = URL.createObjectURL(pdfBlob);
 
-                    // Store the PUML text generated on the server.
-                    pumlText = data.puml;
+                    // Store the DOT text generated on the server.
+                    dotText = data.dot;
 
                     alert("✅ UML diagram generated!");
                 })
@@ -232,32 +234,30 @@
 
             function downloadUML() 
             {
-                if (!umlBlob) 
-                {
+                if (!pdfBlob) {
                     alert("No UML diagram has been generated yet.");
                     return;
                 }
-                const url = URL.createObjectURL(umlBlob);
+                const url = URL.createObjectURL(pdfBlob);
                 const a = document.createElement("a");
                 a.href = url;
-                a.download = "uml_diagram.png";
+                a.download = "uml_diagram.pdf";
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
             }
 
-            function downloadPUML() 
+            function downloadDOT() 
             {
-                if (!pumlText) 
-                {
-                    alert("No PUML content available.");
+                if (!dotText) {
+                    alert("No DOT content available.");
                     return;
                 }
-                const blob = new Blob([pumlText], { type: "text/plain" });
+                const blob = new Blob([dotText], { type: "text/plain" });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement("a");
                 a.href = url;
-                a.download = "diagram.puml";
+                a.download = "diagram.dot";
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
