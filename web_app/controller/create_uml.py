@@ -8,11 +8,10 @@ PLANTUML_JAR_PATH = "./PlantUML/plantuml-1.2025.1.jar"
 OUTPUT_PUML = "output.puml"
 OUTPUT_PNG = "output.png"
 
-def generate_uml_controller(document_type: str):
+def generate_uml_controller(document_type: str,json_dir):
     try:
         prompt_template = get_prompt(document_type)
-
-        json_dir = "/var/data/Json_toAI"
+        
         txt_files = [f for f in os.listdir(json_dir) if f.endswith(".txt")]
         if not txt_files:
             return jsonify({"error": "No .txt file found in Json_toAI folder"}), 404

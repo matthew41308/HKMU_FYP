@@ -8,6 +8,8 @@
      <input id = "user_name" name = "user_name" type="hidden" value = "{{user_name}}">
 </head>
      <body>
+        <div id="loader"></div>
+
       <h1>📂 Upload Code</h1>
       <form id="uploadForm" enctype="multipart/form-data">
         <input type="file" id="fileInput" name="file" webkitdirectory directory multiple>
@@ -16,7 +18,7 @@
 
     <div id="analyse">
         <h1>📂 Start Analysing</h1>
-        <input type="text" id="ProjectName" name="ProjectName" disabled>
+        <input type="text" id="projectName" name="projectName" disabled>
         <button  onClick="analyse_folder()" >📤 Analyse</button>
     </div>
     
@@ -31,8 +33,8 @@
           <!-- UML 圖 -->
           <div class="card half-width">
               <h2>🖼️ UML Diagram</h2>
-              <label for="diagramType">Select Diagram:</label>
-              <select id="diagramType" onchange="toggleCustomInput()">
+              <label for="document_type">Select Diagram:</label>
+              <select id="document_type" name="document_type" onchange="toggleCustomInput()">
                   <option value="use case diagram">Use Case Diagram</option>
                   <option value="sequence diagram">Sequence Diagram</option>
                   <option value="class diagram">Class Diagram</option>
@@ -40,7 +42,7 @@
               </select>
               <div id="customTypeContainer" style="display: none; margin-top: 10px;">
                 <label for="customType">Please specify document type:</label>
-                <input type="text" id="customType" placeholder="e.g. Deployment Overview" />
+                <input type="text" id="customType" placeholder="e.g. Work Flow Diagram" />
               </div>
               <button onclick="generateUML()">⚙️ Generate UML</button>
               <button onclick="downloadUML()">📥 Download Diagram</button>
@@ -50,18 +52,38 @@
         </div>
  
         <script>
+            function startLoading() 
+            {
+                // Disable all buttons.
+                const buttons = document.querySelectorAll("button");
+                buttons.forEach(button => button.disabled = true);
+                // Show the loader.
+                document.getElementById("loader").style.display = "block";
+            }
+            
+            function stopLoading() 
+            {
+                // Re-enable all buttons.
+                const buttons = document.querySelectorAll("button");
+                buttons.forEach(button => button.disabled = false);
+                // Hide the loader.
+                document.getElementById("loader").style.display = "none";
+            }
+
             document.getElementById("uploadForm").addEventListener("submit", uploadForm);
 
             function uploadForm(event) {
                 event.preventDefault();
                 const files = document.getElementById("fileInput").files;
-                const formData = new FormData();
+                
 
                 if (files.length === 0) {
                     alert("❌ Please select at least one file or folder before uploading！");
                     return;
                 }
 
+                startLoading();
+                const formData = new FormData();
                 // Append all files
                 for (let i = 0; i < files.length; i++) {
                     formData.append("file", files[i]);
@@ -91,13 +113,21 @@
                 })
                 .catch(error => {
                     alert("❌ Error occurred while uploading：" + error);
+                })
+                .finally(() => {
+                    stopLoading();
                 });
             }
 
             function analyse_folder()
             {
+                startLoading();
+                const projectName = document.getElementById("projectName").value;
+                const formData = new FormData();
+                formData.append("projectName", projectName);
                 fetch("/analyse_folder", {
                     method: "POST",
+                    body: formData
                 })
                 .then(res => res.json())
                 .then(res => {
@@ -110,10 +140,14 @@
                 })
                 .catch(err => {
                     alert("❌ Error analyzing: " + err);
+                })
+                .finally(() => {
+                    stopLoading();
                 });
             }
     
             function fetchResults() {
+                startLoading();
                 fetch('/results')
                 .then(response => response.json())
                 .then(data => {
@@ -121,22 +155,34 @@
                 })
                 .catch(error => {
                     alert("❌ Failed to obtain analysis results：" + error);
+                })
+                .finally(() => {
+                    stopLoading();
                 });
             }
     
-            function generateUML() {
-                const diagramType = document.getElementById("diagramType").value;
-                const formData = new FormData();
-                let documentType = document.getElementById("diagramType").value;
-                if (documentType === "others") {
-                const custom = document.getElementById("customType").value.trim();
-                if (!custom) {
-                    alert("❌ Please enter a custom document type.");
+            function generateUML() 
+            {
+                const document_type = document.getElementById("document_type").value;
+                if (!document_type) 
+                {
+                    alert("❌ Please select document type.");
                     return;
                 }
-                documentType = custom;
+                
+                if (document_type === "others") 
+                {
+                    document_type = document.getElementById("customType").value.trim();
+                    if (!document_type) 
+                    {
+                        alert("❌ Please enter a custom document type.");
+                        return;
+                    }
                 }
-                formData.append("document_type", documentType);
+
+                startLoading();
+                const formData = new FormData();
+                formData.append("document_type", document_type);
 
                 fetch('/generate_uml', {
                     method: 'POST',
@@ -154,10 +200,13 @@
                 })
                 .catch(error => {
                     alert(error.message);
+                })
+                .finally(() => {
+                    stopLoading();
                 });
             }
             function toggleCustomInput() {
-                const selected = document.getElementById("diagramType").value;
+                const selected = document.getElementById("document_type").value;
                 const customContainer = document.getElementById("customTypeContainer");
                 if (selected === "others") {
                     customContainer.style.display = "block";

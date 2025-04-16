@@ -1,6 +1,7 @@
 import sys
 import os
 import gzip
+import re
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 from config.dbConfig import db_connect, db, cursor, isDBconnected
 from model.json_for_useCase import get_json_for_useCase
@@ -8,18 +9,26 @@ import json
 from datetime import datetime
 
 def export_to_json(data, project_name,json_dir):
-    if data is None:
-        print("No data to export")
-        return
-
+    error_msg=[]
     if not os.path.exists(json_dir):
         os.makedirs(json_dir)
         print(f"Created directory: {json_dir}")
 
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    json_filename = f"{json_dir}/{project_name}_{timestamp}.json"
-    text_filename = f"{json_dir}/{project_name}_{timestamp}.txt"
-    gzip_json_filename = f"{json_dir}/{project_name}_{timestamp}.json.gz"
+    # Determine the attempt number based on existing files for the provided project_name.
+    attempt = 1
+    # Check for any files that match the pattern "{project_name}_<number>.<ext>"
+    for filename in os.listdir(json_dir):
+        # Use re.escape in case the project_name contains special regex characters.
+        match = re.match(rf"^{re.escape(project_name)}_(\d+)\.", filename)
+        if match:
+            current_attempt = int(match.group(1))
+            if current_attempt >= attempt:
+                attempt = current_attempt + 1
+
+    # Build filenames using the attempt count.
+    json_filename = os.path.join(json_dir, f"{project_name}_{attempt}.json")
+    text_filename = os.path.join(json_dir, f"{project_name}_{attempt}.txt")
+    gzip_json_filename = os.path.join(json_dir, f"{project_name}_{attempt}.json.gz")
 
     class CustomJSONEncoder(json.JSONEncoder):
         def default(self, obj):
@@ -65,10 +74,10 @@ def export_to_json(data, project_name,json_dir):
             f.write(text_data)
         print(f"Data exported in text form to {text_filename}")
 
-        return json_filename
+        return json_filename,error_msg
     except Exception as e:
-        print(f"Error exporting to JSON/text: {e}")
-        return None
+        error_msg.extend(f"Error exporting to JSON/text: {e}")
+        return json_filename,error_msg
 
 def print_data(data):
     if data is None:

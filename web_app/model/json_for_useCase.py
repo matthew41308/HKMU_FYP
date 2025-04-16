@@ -5,6 +5,7 @@ from config.dbConfig import db_connect, db, cursor, isDBconnected
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 def get_json_for_useCase():
+    error_msg=[]
     """
     Fetch all data from components, methods, method parameters, and variables tables
     Returns a dictionary containing all the data
@@ -48,19 +49,14 @@ def get_json_for_useCase():
                 print(f"✅ Successfully fetched {len(rows)} records from {table}")
                 
             except pymysql.Error as e:
-                print(f"❌ Error fetching from {table}: {e}")
+                error_msg.extend(f"Error fetching from {table}: {e}")
                 all_data[key] = []
 
-        return all_data
+        return all_data,error_msg
 
-    except pymysql.Error as err:
-        print(f"❌ Database error: {err}")
-        return None
     except Exception as e:
-        print(f"❌ Unexpected error: {e}")
-        return None
-    finally:
-        pass
+        error_msg.extend(f"Unexpected error: {e}")
+        return all_data,error_msg
 
 def print_formatted_data(data):
     """Helper function to print the data in a readable format"""

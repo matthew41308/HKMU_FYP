@@ -52,10 +52,10 @@ def index():
 
 @app.route("/login", methods=["POST"])
 def login():
-    global user_name,UPLOAD_FOLDER,USERS_FOLDER,JSON_DIR,app
+    global user_name,UPLOAD_FOLDER,USERS_FOLDER,JSON_DIR,app,is_login
     user_name = request.form.get("user_name")
     user_pwd = request.form.get("user_pwd")
-    global is_login
+
     if login_verification(user_name, user_pwd):
         is_login=True
         UPLOAD_FOLDER = f"{USERS_FOLDER}/{user_name}/uploads"
@@ -126,7 +126,7 @@ def initialize_db():
 @app.route("/upload", methods=["POST"])
 def upload():
     global is_login, user_name  # make sure these globals are defined elsewhere
-    if not is_login:
+    if not (user_name and is_login):
         return render_template("index.html")
     
     uploaded_files = request.files.getlist("file")
@@ -160,14 +160,14 @@ def upload():
 @app.route("/analyse_folder", methods=["POST"])
 def analyse_folder():
     """
-    Expects form-data with "folder_name" under UPLOAD_FOLDER.
     This endpoint:
-      1. Calls process_folder() to analyze and ingest data into MySQL.
+      1. Processes the folder (analyzes files/folders and ingests data into MySQL).
       2. Retrieves use-case data from the database.
       3. Exports metadata (JSON, GZ, TXT).
-      4. Sends TXT content to the AI platform.
+      4. Returns all error messages (if any) along with a success status.
     """
-    global is_login,app
+    global is_login, app
+    errorMessages = []
     if not is_login:
         return render_template("index.html")
     
@@ -175,21 +175,54 @@ def analyse_folder():
         folder_path = app.config["UPLOAD_FOLDER"]
         if not os.path.isdir(folder_path):
             return jsonify({"error": f"Folder '{folder_path}' does not exist."}), 404
-
+        
         print(f"✅ Starting analysis on folder: {folder_path}")
+        project_name = request.form.get("projectName")
 
-        errorMessages = process_folder(folder_path)
-        result = get_json_for_useCase()
-        project_name = request.get_data()  
-        export_to_json(result, project_name,app.config["JSON_DIR"])
-        errorMessages = [msg for msg in errorMessages if msg]
-        if errorMessages:
-            return jsonify({"message": "Please find the following error", "error": errorMessages}), 500
+        # STEP 1: Process the folder and capture any error messages.
+        folder_errors = process_folder(folder_path)
+        if folder_errors:
+            errorMessages.extend(folder_errors)
         else:
-            return jsonify({"message": "✅ Analysis complete!", "error": ""}), 200
+            print("✅ Folder processing completed with no errors.")
+        
+        # STEP 2: Retrieve use-case data from the database.
+        data,data_error = get_json_for_useCase()
+        if data_error:
+            errorMessages.append(data_error)
+            return jsonify({
+                "message": "Operation completed with some errors.",
+                "errors": errorMessages
+            }), 500
+        else:
+            print("✅ Use-case data successfully retrieved.")
+        
+        # STEP 3: Export the use-case data to JSON, GZ, and TXT files.
+        export_result,json_error= export_to_json(data, project_name, app.config["JSON_DIR"])
+        if json_error:
+            errorMessages.append(json_error)
+            return jsonify({
+                "message": "Operation completed with some errors.",
+                "errors": errorMessages
+            }), 500
+        else:
+            print(f"✅ Data exported successfully to file: {export_result}")
+        
+        # Combine and return all error messages if any.
+        if errorMessages:
+            return jsonify({
+                "message": "Operation completed but some errors occur when analyzing folders. It may affect the result of diagrams",
+                "errors": errorMessages
+            }), 500
+        else:
+            return jsonify({"message": "✅ Analysis complete!"}), 200
 
     except Exception as e:
-        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+        return jsonify({
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }), 500
+
 
 # 📌 **查詢分析結果 API**
 @app.route("/results", methods=["GET"])
@@ -213,8 +246,12 @@ def get_results():
 
 @app.route("/generate_uml", methods=["POST"])
 def generate_uml():
-    document_type = request.form.get("document_type", "use case diagram")
-    return generate_uml_controller(document_type)
+    global user_name,is_login,JSON_DIR
+    if not (user_name and is_login) :
+        return render_template("index.html")
+
+    document_type = request.form.get("document_type")
+    return generate_uml_controller(document_type,JSON_DIR)
 
 @app.route("/download_uml", methods=["GET"])
 def download_uml():
