@@ -15,14 +15,10 @@ def get_prompt(document_type: str) -> str:
     Returns a prompt to generate a PlantUML diagram of a given type.
     document_type: "use case diagram", "sequence diagram", etc.
     """
-    # 定義不合法的文件類型
     invalid_types = ['business', 'marketing', 'non-technical']
-
-    # 檢查是否是 "Others" 或不合法的類型
     if document_type.lower() in invalid_types:
-        return "0"  # AI 回應 0，表示這不是有效的技術文檔
+        return "0"  
 
-    # 生成常規的 prompt
     return f"""Please help me generate this document type: {document_type}.
 If it is not a technical document for project management, please respond with 0 only.
 

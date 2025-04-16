@@ -24,6 +24,4 @@ def init_app():
     app.config["is_login"] = False
     app.config["user_name"] = None
     app.config["ALLOWED_EXTENSIONS"] = {"py"}
-    app.config["openAI_client"] = get_openai()
-    app.config["prompt"] = get_prompt()
     return app
