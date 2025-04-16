@@ -2,7 +2,6 @@ import ast
 import os
 import sys
 import json
-import pymysql
 from typing import List
 from dataclasses import dataclass, asdict
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))

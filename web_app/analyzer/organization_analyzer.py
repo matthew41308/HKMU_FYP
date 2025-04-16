@@ -1,5 +1,4 @@
 import os
-from enum import Enum
 from dataclasses import dataclass, asdict
 from typing import List
 

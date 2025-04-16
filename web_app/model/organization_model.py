@@ -2,7 +2,6 @@ import pymysql
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
-from analyzer.organization_analyzer import analyze_organization
 from flask import current_app
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
@@ -61,9 +60,3 @@ def insert_organization(analyzed_organization):
         db.rollback()
         raise
 
-if __name__=="__main__":
-    # Example usage
-    project_root = "project_sample/library_management_python"
-    result=analyze_organization(project_root)
-    print(result)
-    insert_organization(result)

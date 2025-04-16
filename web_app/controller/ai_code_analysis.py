@@ -1,13 +1,11 @@
 from http import client
 import os
 import json
-import traceback
 from datetime import datetime
-from controller.metaData_generation import process_folder
-from controller.create_useCase_diagram import export_to_json
-from model.json_for_useCase import get_json_for_useCase
+from web_app.controller.metaData_generation import process_folder
+from web_app.controller.create_useCase_diagram import export_to_json
+from web_app.model.json_for_useCase import get_json_for_useCase
 from flask import current_app
-from openai import AzureOpenAI
 
 def ai_code_analysis(folder_path: str, project_name: str) -> dict:
     try:

@@ -4,7 +4,7 @@ import gzip
 import re
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 from flask import current_app
-from model.json_for_useCase import get_json_for_useCase
+from web_app.model.json_for_useCase import get_json_for_useCase
 import json
 from datetime import datetime
 

@@ -1,6 +1,5 @@
 from web_app import init_app
 import os, sys, json,traceback
-from urllib.parse import quote
 from flask import Flask, request, render_template, jsonify, send_file
 from werkzeug.utils import secure_filename
 from web_app.controller.metaData_generation import process_folder
@@ -8,7 +7,6 @@ from web_app.controller.create_useCase_diagram import export_to_json
 from web_app.model.json_for_useCase import get_json_for_useCase
 import shutil
 from web_app.controller.create_uml import generate_uml_controller
-from web_app.config.dbConfig import DB
 from web_app.model.user_model import login_verification
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "/")))
 app = init_app()

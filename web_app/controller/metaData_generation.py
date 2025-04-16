@@ -2,14 +2,14 @@ import sys
 import os
 from collections import deque
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
-from analyzer.component_analyzer import analyze_component
-from analyzer.method_analyzer import analyze_method
-from analyzer.variable_analyzer import analyze_variable
-from analyzer.organization_analyzer import analyze_organization
-from model.component_model import insert_components
-from model.method_model import insert_method
-from model.variable_model import insert_variable
-from model.organization_model import insert_organization
+from web_app.analyzer.component_analyzer import analyze_component
+from web_app.analyzer.method_analyzer import analyze_method
+from web_app.analyzer.variable_analyzer import analyze_variable
+from web_app.analyzer.organization_analyzer import analyze_organization
+from web_app.model.component_model import insert_components
+from web_app.model.method_model import insert_method
+from web_app.model.variable_model import insert_variable
+from web_app.model.organization_model import insert_organization
 def process_file(file_location):
     error_msg=[]
 
