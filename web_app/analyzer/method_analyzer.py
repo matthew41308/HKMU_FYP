@@ -131,7 +131,6 @@ def method_analyzer(code: str) -> Dict:
         tree = ast.parse(code)
     except Exception as parse_err:
         print(f"Ignored parsing error in method analyzer: {parse_err}")
-        return {'methods': []}
     
     analyzer = MethodAnalyzer()
     

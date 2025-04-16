@@ -107,14 +107,16 @@ def reset_db():
             return False
 
     try:
-        # Disable foreign key checks before mass deletion
+        # Disable foreign key checks before mass deletion/truncation
         cursor.execute("SET FOREIGN_KEY_CHECKS=0;")
-        # Delete rows in the correct order based on dependencies
-        cursor.execute("DELETE FROM methodparameters;")
-        cursor.execute("DELETE FROM methods;")
-        cursor.execute("DELETE FROM components;")
-        cursor.execute("DELETE FROM variables;")
-        cursor.execute("DELETE FROM organizations;")
+        
+        # Use TRUNCATE to reset auto-increment values automatically
+        cursor.execute("TRUNCATE TABLE methodparameters;")
+        cursor.execute("TRUNCATE TABLE methods;")
+        cursor.execute("TRUNCATE TABLE components;")
+        cursor.execute("TRUNCATE TABLE variables;")
+        cursor.execute("TRUNCATE TABLE organizations;")
+        
         # Re-enable foreign key checks
         cursor.execute("SET FOREIGN_KEY_CHECKS=1;")
         

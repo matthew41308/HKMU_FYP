@@ -108,8 +108,7 @@ def class_analyzer(code: str, file_path: str):  # Modified to accept file_path
         tree = ast.parse(code)
     except Exception as parse_err:
         print(f"Ignored parsing error in file {file_path}: {parse_err}")
-        # Return a default result with an empty structure for components and dependencies
-        return {'components': [], 'dependencies': [], 'file_location': file_path}
+
     
     analyzer = ClassAnalyzer(file_path)
     
