@@ -132,7 +132,7 @@
                 .then(res => res.json())
                 .then(res => {
                     if (res.error) {
-                        alert("❌ Analysis failed: " + res.error);
+                        alert("❌ "+ res.message+ ": " + res.error);
                     } else {
                         alert("✅ Analysis complete!");
                         fetchResults();

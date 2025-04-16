@@ -192,7 +192,7 @@ def analyse_folder():
             errorMessages.append(data_error)
             return jsonify({
                 "message": "Operation completed with some errors.",
-                "errors": errorMessages
+                "error": errorMessages
             }), 500
         else:
             print("✅ Use-case data successfully retrieved.")
@@ -203,7 +203,7 @@ def analyse_folder():
             errorMessages.append(json_error)
             return jsonify({
                 "message": "Operation completed with some errors.",
-                "errors": errorMessages
+                "error": errorMessages
             }), 500
         else:
             print(f"✅ Data exported successfully to file: {export_result}")
@@ -212,7 +212,7 @@ def analyse_folder():
         if errorMessages:
             return jsonify({
                 "message": "Operation completed but some errors occur when analyzing folders. It may affect the result of diagrams",
-                "errors": errorMessages
+                "error": errorMessages
             }), 500
         else:
             return jsonify({"message": "✅ Analysis complete!"}), 200

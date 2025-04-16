@@ -71,3 +71,6 @@ def print_formatted_data(data):
             for key, value in item.items():
                 print(f"  {key}: {value}")
 
+if __name__ =="__main__":
+    data = get_json_for_useCase()
+    print_formatted_data(data)
