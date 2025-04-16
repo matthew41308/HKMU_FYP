@@ -48,7 +48,7 @@ def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # Create the database connection once before the first request
-@app.before_first_request
+@app.before_serving
 def init_db_connection():
     conn = DB()
     db = conn.get_db()
