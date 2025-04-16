@@ -18,7 +18,7 @@
 
     <div id="analyse">
         <h1>📂 Start Analysing</h1>
-        <input type="text" id="projectName" name="projectName" disabled>
+        <input type="text" id="projectName" name="projectName" >
         <button  onClick="analyse_folder()" >📤 Analyse</button>
     </div>
     
@@ -104,10 +104,10 @@
                         if (files[0].webkitRelativePath) {
                             // The relative path may look like "rootFolder/subfolder/filename.ext"
                             const rootFolder = files[0].webkitRelativePath.split("/")[0];
-                            document.getElementById("ProjectName").value = rootFolder;
+                            document.getElementById("projectName").value = rootFolder;
                         } else {
                             // Fallback to the file name if webkitRelativePath is unavailable
-                            document.getElementById("ProjectName").value = files[0].name;
+                            document.getElementById("projectName").value = files[0].name;
                         }
                     }
                 })
