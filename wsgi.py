@@ -1,6 +1,6 @@
 from web_app import init_app
 import os, sys, json,traceback
-from flask import Flask, request, render_template, jsonify, send_file
+from flask import Flask, request, render_template, jsonify, send_file,redirect
 from werkzeug.utils import secure_filename
 from web_app.controller.metaData_generation import process_folder
 from web_app.controller.create_useCase_diagram import export_to_json
@@ -84,7 +84,7 @@ def upload():
         return "." in filename and filename.rsplit(".", 1)[1].lower() in app.config["ALLOWED_EXTENSIONS"]
 
     if not (app.config["user_name"] and app.config["is_login"]):
-        return render_template("index.html")
+        return redirect("/")
     
     uploaded_files = request.files.getlist("file")
     if not uploaded_files:
@@ -124,8 +124,8 @@ def analyse_folder():
       4. Returns all error messages (if any) along with a success status.
     """
     errorMessages = []
-    if app.config["is_login"]:
-        return render_template("index.html")
+    if not app.config["is_login"]:
+        return redirect("/")
     
     try:
         folder_path = app.config["UPLOAD_FOLDER"]
@@ -203,7 +203,7 @@ def get_results():
 def generate_uml():
 
     if not (app.config["user_name"] and app.config["is_login"]) :
-        return render_template("index.html")
+        return redirect("/")
 
     document_type = request.form.get("document_type")
     return generate_uml_controller(document_type,app.config["JSON_DIR"])
