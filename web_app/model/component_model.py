@@ -2,8 +2,10 @@ import pymysql
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
-
-def insert_components(analyzed_class, db, cursor):
+from flask import current_app
+def insert_components(analyzed_class):
+    db = current_app.config["db"]
+    cursor = current_app.config["cursor"]
     """
     Insert component information into the database
     Links components with their organizations if they exist

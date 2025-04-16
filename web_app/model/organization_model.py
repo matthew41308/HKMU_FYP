@@ -3,12 +3,11 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 from analyzer.organization_analyzer import analyze_organization
-
-from config.dbConfig import db_connect,db,cursor,isDBconnected
+from flask import current_app
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
-def insert_organization(analyzed_organization,db, cursor):
+def insert_organization(analyzed_organization):
     """
     Insert organizations into the database
     Args:
@@ -19,10 +18,8 @@ def insert_organization(analyzed_organization,db, cursor):
     if not analyzed_organization.get("organizations"):
         return
 
-    if cursor is None:
-
-        print("❌ Failed to establish database connection")
-        return
+    db = current_app.config["db"]
+    cursor = current_app.config["cursor"]
             
     try:
         for organization in analyzed_organization["organizations"]:
@@ -65,10 +62,6 @@ def insert_organization(analyzed_organization,db, cursor):
         raise
 
 if __name__=="__main__":
-    if not isDBconnected :
-        db, cursor = db_connect()
-        if cursor is None:
-            print("❌ Failed to establish database connection")
     # Example usage
     project_root = "project_sample/library_management_python"
     result=analyze_organization(project_root)

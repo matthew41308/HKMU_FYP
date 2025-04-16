@@ -2,8 +2,8 @@ import pymysql
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
-
-def insert_variable(analyzed_variable, db, cursor):
+from flask import current_app
+def insert_variable(analyzed_variable):
     """
     Insert variables into the database
     Args:
@@ -11,9 +11,8 @@ def insert_variable(analyzed_variable, db, cursor):
         db: Database connection
         cursor: Database cursor
     """
-    if cursor is None:
-        print("❌ Failed to establish database connection")
-        return
+    db = current_app.config["db"]
+    cursor = current_app.config["cursor"]
 
     if not analyzed_variable.get("variables"):
         print("⚠️ No variables to insert")

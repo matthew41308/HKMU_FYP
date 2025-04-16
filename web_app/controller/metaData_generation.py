@@ -10,12 +10,8 @@ from model.component_model import insert_components
 from model.method_model import insert_method
 from model.variable_model import insert_variable
 from model.organization_model import insert_organization
-from config.dbConfig import db_connect, db, cursor, isDBconnected
-from flask import jsonify
 def process_file(file_location):
     error_msg=[]
-    # Analyze the file
-    global db, cursor, isDBconnected
 
     # Skip if not a Python file
     if not file_location.endswith('.py'):
@@ -30,29 +26,23 @@ def process_file(file_location):
     analyzed_method = analyze_method(file_location)
     analyzed_variable = analyze_variable(file_location)
 
-    if not isDBconnected:
-        db, cursor = db_connect()
-        if cursor is None:
-            error_msg.extend("Failed to establish database connection")
-            return error_msg
-
     try:
-        insert_components(analyzed_component, db, cursor)
+        insert_components(analyzed_component)
     except Exception as e:
         error_msg.extend(f"Error during processing insert_components of {file_location} at process_file: {e}")
-        db.rollback()
+
         return error_msg
     try:
-        insert_method(analyzed_method, db, cursor)
+        insert_method(analyzed_method)
     except Exception as e:
         error_msg.extend(f"Error during processing insert_method of{file_location} at process_file: {e}")
-        db.rollback()
+
         return error_msg
     try:
-        insert_variable(analyzed_variable, db, cursor)
+        insert_variable(analyzed_variable)
     except Exception as e:
         error_msg.extend(f"Error during processing insert_variable of {file_location} at process_file: {e}")
-        db.rollback()
+
         return error_msg
     
     print(f"✅ All data inserted successfully for {file_location}")
@@ -70,25 +60,16 @@ def process_folder(root_folder):
     Args:
         root_folder (str): Root directory path to start analysis.
     """
-    global db, cursor, isDBconnected
     error_msg=[]
-    # Connect to database if not connected.
-    if not isDBconnected:
-        db, cursor = db_connect()
-        if cursor is None:
-            print("❌ Failed to establish database connection")
-            return False
 
     try:
-        
         # === Process the ROOT folder (first layer) ===
         print(f"Processing ROOT folder: {root_folder}")
         try:
             analyzed_organization = analyze_organization(root_folder)
-            insert_organization(analyzed_organization, db, cursor)
+            insert_organization(analyzed_organization)
         except Exception as e:
             error_msg.extend(f"Error processing insert_organization of folder at {root_folder} at process_folder: {e}")
-            db.rollback()
 
         
         # Optionally, process Python files directly under the root folder.
@@ -150,20 +131,10 @@ def process_folder(root_folder):
 
     except Exception as e:
         error_msg.extend(f"Error during folder processing: {e}")
-        db.rollback()
-    finally:
-        if isDBconnected:
-            cursor.close()
-            db.close()
-            isDBconnected = False
-            print("\n✅ Database connection closed.")
+
     return error_msg
 
 if __name__ == "__main__":
-    if not isDBconnected:
-        db, cursor = db_connect()
-        if cursor is None:
-            print("❌ Failed to establish database connection")
     # Example usage
     project_root = "project_sample/library_management_python"
     process_folder(project_root)

@@ -3,7 +3,7 @@ import os
 import gzip
 import re
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
-from config.dbConfig import db_connect, db, cursor, isDBconnected
+from flask import current_app
 from model.json_for_useCase import get_json_for_useCase
 import json
 from datetime import datetime
@@ -98,11 +98,8 @@ def print_data(data):
                 print(f"{key}: {value}")
 
 if __name__=="__main__":
-    if not isDBconnected:
-        # Get database connection
-        db, cursor = db_connect()
-        if cursor is None:
-            print("Failed to establish database connection")
+    db=current_app.config["db"]
+    cursor = current_app.config["cursor"]
     result = get_json_for_useCase(db, cursor)
     # Print summary of the data
     print_data(result)

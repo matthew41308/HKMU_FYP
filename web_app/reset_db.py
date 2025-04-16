@@ -1,4 +1,5 @@
-from config.dbConfig import reset_db
+from config.dbConfig import DB
 
 if __name__ =="__main__":
-    reset_db()
+    conn = DB()
+    conn.reset_db()

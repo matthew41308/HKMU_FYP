@@ -3,12 +3,11 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
-from config.dbConfig import db_connect,db,cursor,isDBconnected
+from flask import current_app
 
 def login_verification(user_name, user_pwd):
-    global db, cursor
-    if not isDBconnected:
-        db, cursor = db_connect()
+    db = current_app.config["db"]
+    cursor = current_app.config["cursor"]
 
     if(user_name == None or user_pwd == None):
         return False

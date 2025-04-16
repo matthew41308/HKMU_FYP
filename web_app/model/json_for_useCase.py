@@ -1,7 +1,7 @@
 import pymysql
 import sys
 import os
-from config.dbConfig import db_connect, db, cursor, isDBconnected
+from flask import current_app
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
 def get_json_for_useCase():
@@ -10,11 +10,9 @@ def get_json_for_useCase():
     Fetch all data from components, methods, method parameters, and variables tables
     Returns a dictionary containing all the data
     """
-    global cursor
-    if cursor is None:
-        db,cursor = db_connect()
-        print("❌ Failed to establish database connection")
-        return None
+    db = current_app.config["db"]
+    cursor = current_app.config["cursor"]
+
 
     all_data = {
         'organizations':[],

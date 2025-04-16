@@ -1,6 +1,6 @@
 import os, sys, json, openai, re, subprocess, traceback
 from urllib.parse import quote
-from flask import Flask, request, render_template, jsonify, send_file
+from flask import Flask, request, render_template, jsonify, send_file,current_app
 from werkzeug.utils import secure_filename
 from controller.metaData_generation import process_folder
 from controller.create_useCase_diagram import export_to_json
@@ -8,44 +8,68 @@ from model.json_for_useCase import get_json_for_useCase
 from controller.ai_code_analysis import ai_code_analysis
 import shutil
 from controller.create_uml import generate_uml_controller
+from config.dbConfig import DB
 from model.user_model import login_verification
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "./")))
-from config.dbConfig import db_connect, reset_db, db, cursor, isDBconnected
 
-# ✅ 設定 PlantUML JAR 檔案路徑
+
 PLANTUML_JAR_PATH = "./PlantUML/plantuml-1.2025.1.jar"  # **確保這個路徑正確**
 OUTPUT_PUML = "output.puml"
 OUTPUT_PNG = "output.png"
 is_login=False
 user_name=None
-# ✅ 設定 Flask
+
 app = Flask(__name__)
 app.secret_key=os.getenv("FLASK_SECRET_KEY")
+
 # Create folder for uploads on the persistent disk
 USERS_FOLDER="/var/data/users"
 UPLOAD_FOLDER=""
+
 # Create Json_toAI folder on the persistent disk
 JSON_DIR = ""
 
-# ✅ 設定 Azure OpenAI
+
 client = openai.AzureOpenAI(
     azure_endpoint="https://fyp2025.openai.azure.com",
     api_key="3kDNJlmeMVUQa1a88MWNOWnWQtb2Mdgt0J9EKKcNLubRhXngK3PiJQQJ99BBACYeBjFXJ3w3AAABACOGDCXh",
     api_version="2024-02-01"
 )
 
-# ✅ 允許的檔案類型
+
 ALLOWED_EXTENSIONS = {"py"}
 
-# ✅ 定義合法的 component_type 和 dependency_type
+
 VALID_COMPONENT_TYPES = {"class", "function", "module", "external_library"}
 VALID_DEPENDENCY_TYPES = {"uses", "implements", "extends", "includes", "calls", "imports"}
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# 📌 **首頁**
+# Create the database connection once before the first request
+@app.before_first_request
+def init_db_connection():
+    conn = DB()
+    db = conn.get_db()
+    cursor = conn.get_cursor()
+    isDBconnected=conn.is_db_connected()
+    if not isDBconnected:
+        raise Exception("Failed to establish database connection")
+    # Store the db and cursor in the app config so they can be used globally
+    app.config['db'] = db
+    app.config['cursor'] = cursor
+    print("Database connection established.")
+
+# Close the database connection when the application context ends
+@app.teardown_appcontext
+def close_db_connection(exception):
+    db = current_app.config.get('db')
+    if db is not None:
+        db.close()
+        print("Database connection closed.")
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -80,25 +104,20 @@ def admin():
 
 @app.route("/reset_db", methods=["POST"])
 def reset_db_route():
-    global db, cursor, isDBconnected
-    status = reset_db()
-    if not (status or isDBconnected):
-        return jsonify({"error": "無法連接 MySQL"}), 500
-    elif not status:
-        return jsonify({"error": "重置失敗"}), 500
+    db=current_app.config["db"]
+    status = db.reset_db()
+    if status:
+        jsonify({"message":"Database reset successfully"}),200
+    else:
+        return jsonify({"error": "Fail to reset database"}), 500
 
-# 📌 **API: 重新建立資料表**
+
 @app.route("/initialize_db", methods=["POST"])
 def initialize_db():
-    global db, cursor, isDBconnected
-    if not isDBconnected:
-        # Get database connection
-        db, cursor = db_connect()
-        if not isDBconnected:
-            return jsonify({"error": "無法連接 MySQL"}), 500
-
+    db=current_app.config["db"]
+    cursor=current_app.config["cursor"]
     try:
-        reset_db()
+        db.reset_db()
         # Ensure JSON_DIR exists in the persistent disk directory
         if not os.path.exists(JSON_DIR):
             os.makedirs(JSON_DIR, exist_ok=True)
@@ -121,7 +140,6 @@ def initialize_db():
     finally:
         cursor.close()
         db.close()
-        isDBconnected = False
 
 @app.route("/upload", methods=["POST"])
 def upload():
@@ -147,14 +165,14 @@ def upload():
             parts = [secure_filename(part) for part in relative_path.split("/") if part]
             # Reconstruct the path preserving the directory structure.
             safe_path = os.path.join(*parts)
-            full_save_path = os.path.join(app.config["UPLOAD_FOLDER"], safe_path)
+            full_save_path = os.path.join(current_app.config["UPLOAD_FOLDER"], safe_path)
             # Create directory structure if it doesn't exist.
             os.makedirs(os.path.dirname(full_save_path), exist_ok=True)
             file.save(full_save_path)
 
     return jsonify({
         "message": f"✅ {len(uploaded_files)} files uploaded successfully!",
-        "uploaded_path": app.config["UPLOAD_FOLDER"]
+        "uploaded_path": current_app.config["UPLOAD_FOLDER"]
     }), 200
 
 @app.route("/analyse_folder", methods=["POST"])
@@ -166,13 +184,13 @@ def analyse_folder():
       3. Exports metadata (JSON, GZ, TXT).
       4. Returns all error messages (if any) along with a success status.
     """
-    global is_login, app
+    global is_login
     errorMessages = []
     if not is_login:
         return render_template("index.html")
     
     try:
-        folder_path = app.config["UPLOAD_FOLDER"]
+        folder_path = current_app.config["UPLOAD_FOLDER"]
         if not os.path.isdir(folder_path):
             return jsonify({"error": f"Folder '{folder_path}' does not exist."}), 404
         
@@ -198,7 +216,7 @@ def analyse_folder():
             print("✅ Use-case data successfully retrieved.")
         
         # STEP 3: Export the use-case data to JSON, GZ, and TXT files.
-        export_result,json_error= export_to_json(data, project_name, app.config["JSON_DIR"])
+        export_result,json_error= export_to_json(data, project_name, current_app.config["JSON_DIR"])
         if json_error:
             errorMessages.append(json_error)
             return jsonify({
@@ -224,7 +242,7 @@ def analyse_folder():
         }), 500
 
 
-# 📌 **查詢分析結果 API**
+
 @app.route("/results", methods=["GET"])
 def get_results():
     global JSON_DIR
@@ -269,4 +287,4 @@ def download_puml():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    current_app.run(debug=True)

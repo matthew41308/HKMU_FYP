@@ -1,9 +1,10 @@
 import pymysql
 import sys
 import os
+from flask import current_app
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
-def insert_method(analyzed_method, db, cursor):
+def insert_method(analyzed_method):
     """
     Insert method and its parameters into the database
     Args:
@@ -14,9 +15,8 @@ def insert_method(analyzed_method, db, cursor):
     if not analyzed_method.get("methods"):
         return
 
-    if cursor is None:
-        print("❌ Failed to establish database connection")
-        return
+    db = current_app.config["db"]
+    cursor = current_app.config["cursor"]
             
     try:
         for method in analyzed_method["methods"]:

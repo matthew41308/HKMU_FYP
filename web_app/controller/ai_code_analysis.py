@@ -6,7 +6,7 @@ from datetime import datetime
 from controller.metaData_generation import process_folder
 from controller.create_useCase_diagram import export_to_json
 from model.json_for_useCase import get_json_for_useCase
-from config.dbConfig import db_connect, db, cursor, isDBconnected
+from flask import current_app
 from openai import AzureOpenAI
 
 def ai_code_analysis(folder_path: str, project_name: str) -> dict:
@@ -15,12 +15,8 @@ def ai_code_analysis(folder_path: str, project_name: str) -> dict:
         process_folder(folder_path)
 
         # Step 2: Get metadata from database
-        global db, cursor, isDBconnected
-        if not isDBconnected:
-            db, cursor = db_connect()
-            if cursor is None:
-                return {"error": "❌ Failed to connect to database."}
-
+        db=current_app.config["db"]
+        cursor=current_app.config["cursor"]
         data = get_json_for_useCase(db, cursor)
 
         # Step 3: Export metadata to JSON + TXT
