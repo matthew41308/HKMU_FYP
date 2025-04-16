@@ -161,7 +161,6 @@ def analyze_component(file_location: str):
     """
     Read a Python file and analyze it as a component, producing
     a result with keys "components", "dependencies", and "file_location".
-    This function is designed not to impact your process_file logic.
     """
     with open(file_location, "r", encoding="utf-8") as f:
         code = f.read()

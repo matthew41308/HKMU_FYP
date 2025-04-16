@@ -3,7 +3,6 @@ import sys
 import pymysql
 from sshtunnel import SSHTunnelForwarder
 
-# Adjust sys.path if necessary
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 class DB:
     _db = None

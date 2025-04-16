@@ -22,8 +22,8 @@ def login():
 
     if login_verification(app.config["user_name"], user_pwd):
         app.config["is_login"]=True
-        app.config["UPLOAD_FOLDER"] = f'{app.config["UPLOAD_FOLDER"]}/{app.config["user_name"]}/uploads'
         app.config["JSON_DIR"] = f'{app.config["UPLOAD_FOLDER"]}/{app.config["user_name"]}/Json_toAI'
+        app.config["UPLOAD_FOLDER"] = f'{app.config["UPLOAD_FOLDER"]}/{app.config["user_name"]}/uploads'
         if not os.path.exists(app.config["UPLOAD_FOLDER"]):
             os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
         if not os.path.exists(app.config["JSON_DIR"]):
