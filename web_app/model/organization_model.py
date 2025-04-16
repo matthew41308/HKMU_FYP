@@ -66,4 +66,4 @@ if __name__=="__main__":
     project_root = "project_sample/library_management_python"
     result=analyze_organization(project_root)
     print(result)
-    insert_organization(result,db,cursor)
+    insert_organization(result)

@@ -287,4 +287,4 @@ def download_puml():
 
 
 if __name__ == "__main__":
-    current_app.run(debug=True)
+    app.run(debug=True)
