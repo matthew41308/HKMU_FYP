@@ -12,7 +12,7 @@ def get_openai():
 
 def get_prompt(document_type: str) -> str:
     """
-    Returns a prompt to generate a PlantUML diagram of a given type.
+    Returns a prompt to generate a Graphviz diagram of a given type.
     document_type: "use case diagram", "sequence diagram", etc.
     """
     invalid_types = ['business', 'marketing', 'non-technical']
@@ -25,6 +25,5 @@ If it is not a technical document for project management, please respond with 0 
 From the given file, the data inside are metadata extracted from a project, 
 the data includes information of the actual code. From the relationship of the data, 
 please try to draw a {document_type} to illustrate the design of the project. 
-The graph should be in the format of PlantUML with an older version. 
-Please only send back the PlantUML code without any explanation.
+Please only send back the Graphviz code without any explanation.
 """
