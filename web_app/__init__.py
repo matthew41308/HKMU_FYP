@@ -23,4 +23,5 @@ def init_app():
     app.config["is_login"] = False
     app.config["user_name"] = None
     app.config["ALLOWED_EXTENSIONS"] = {"py"}
+    app.config["PLANTUML_JAR_PATH"] = "/var/data/tools/plantuml.jar"
     return app
