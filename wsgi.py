@@ -10,7 +10,7 @@ import shutil
 from web_app.controller.create_uml import generate_uml_controller
 from web_app.config.dbConfig import DB
 from web_app.model.user_model import login_verification
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "./")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "/")))
 app = init_app()
 
 @app.route("/")
