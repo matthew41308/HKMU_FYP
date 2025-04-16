@@ -1,4 +1,4 @@
-from config.dbConfig import DB
+from web_app.config.dbConfig import DB
 
 if __name__ =="__main__":
     conn = DB()
