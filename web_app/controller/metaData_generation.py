@@ -19,11 +19,11 @@ def process_file(file_location):
 
     # Skip if not a Python file
     if not file_location.endswith('.py'):
-        return
+        return []
 
     # Skip __init__.py files
     if os.path.basename(file_location) == '__init__.py':
-        return
+        return []
 
     print(f"Processing file: {file_location}")
     analyzed_component = analyze_component(file_location)
@@ -34,26 +34,26 @@ def process_file(file_location):
         db, cursor = db_connect()
         if cursor is None:
             error_msg.extend("Failed to establish database connection")
-            return
+            return error_msg
 
     try:
         insert_components(analyzed_component, db, cursor)
     except Exception as e:
         error_msg.extend(f"Error during processing insert_components of {file_location} at process_file: {e}")
         db.rollback()
-        return
+        return error_msg
     try:
         insert_method(analyzed_method, db, cursor)
     except Exception as e:
         error_msg.extend(f"Error during processing insert_method of{file_location} at process_file: {e}")
         db.rollback()
-        return
+        return error_msg
     try:
         insert_variable(analyzed_variable, db, cursor)
     except Exception as e:
         error_msg.extend(f"Error during processing insert_variable of {file_location} at process_file: {e}")
         db.rollback()
-        return
+        return error_msg
     
     print(f"✅ All data inserted successfully for {file_location}")
     return error_msg
