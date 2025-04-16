@@ -201,12 +201,12 @@ def get_results():
 
 @app.route("/generate_uml", methods=["POST"])
 def generate_uml():
-
-    if not (app.config["user_name"] and app.config["is_login"]) :
+    if not (app.config["user_name"] and app.config["is_login"]):
         return redirect("/")
-
+    
     document_type = request.form.get("document_type")
-    return generate_uml_controller(document_type,app.config["JSON_DIR"])
+    # Directly return the JSON response from generate_uml_controller
+    return generate_uml_controller(document_type, app.config["JSON_DIR"])
 
 @app.route("/download_uml", methods=["GET"])
 def download_uml():

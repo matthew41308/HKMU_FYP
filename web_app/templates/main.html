@@ -188,7 +188,7 @@
                 })
                 .then(response => {
                     if (!response.ok) {
-                        throw new Error("❌ Generate UML failed!");
+                        throw new Error("❌ Generate UML failed: "+response.error);
                     }
                     // Expecting a JSON response with keys "png" (base64 image) and "puml"
                     return response.json();
