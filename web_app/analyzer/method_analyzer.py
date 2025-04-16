@@ -148,6 +148,6 @@ def analyze_method(file_location: str):
         return result
     
 if __name__ == "__main__":
-    file_location ="project_sample/library_management_python/Controllers/UserManager.py"
+    file_location ="project_sample/library_management_python/Misc/functions.py"
     analyzed_method=analyze_method(file_location)
     print(analyzed_method)

@@ -2,7 +2,7 @@ import sys
 import os
 from collections import deque
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
-from analyzer.component_analyzer import analyze_class
+from analyzer.component_analyzer import analyze_component
 from analyzer.method_analyzer import analyze_method
 from analyzer.variable_analyzer import analyze_variable
 from analyzer.organization_analyzer import analyze_organization
@@ -26,7 +26,7 @@ def process_file(file_location):
         return
 
     print(f"Processing file: {file_location}")
-    analyzed_class = analyze_class(file_location)
+    analyzed_component = analyze_component(file_location)
     analyzed_method = analyze_method(file_location)
     analyzed_variable = analyze_variable(file_location)
 
@@ -37,7 +37,7 @@ def process_file(file_location):
             return
 
     try:
-        insert_components(analyzed_class, db, cursor)
+        insert_components(analyzed_component, db, cursor)
     except Exception as e:
         error_msg.extend(f"Error during processing insert_components of {file_location} at process_file: {e}")
         db.rollback()
