@@ -1,7 +1,9 @@
 from flask import Flask
 import os
+import sys
 from config.dbConfig import DB
 from config.external_ai_config import get_openai, get_prompt
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 def init_app():
     app = Flask(__name__)
     app.secret_key=os.getenv("FLASK_SECRET_KEY")
