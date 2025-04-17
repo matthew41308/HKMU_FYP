@@ -7,7 +7,16 @@ import graphviz
 
 def generate_uml_controller(document_type: str, json_dir):
     try:
-        # STEP 1: Generate the full prompt for AI
+        # STEP 0: Configure the environment for Graphviz.
+        # Set the custom Graphviz folder location.
+        # Assuming your custom Graphviz installation is located at /graphviz,
+        # and the dot executable is at /graphviz/usr/bin/dot:
+        custom_dot_path = "/graphviz/usr/bin"
+        
+        
+        os.environ["GRAPHVIZ_DOT"] = os.path.join(custom_dot_path, "dot")
+        
+        # STEP 1: Generate the full prompt for AI.
         prompt_template = get_prompt(document_type)
         txt_files = [f for f in os.listdir(json_dir) if f.endswith(".txt")]
         if not txt_files:
@@ -24,7 +33,7 @@ def generate_uml_controller(document_type: str, json_dir):
             + exported_text
         )
 
-        # STEP 2: Get the Graphviz (DOT) code from the AI (using OpenAI API)
+        # STEP 2: Get the Graphviz (DOT) code from the AI using the OpenAI API.
         client = get_openai()
         response = client.chat.completions.create(
             model="gpt-4o",
@@ -40,7 +49,7 @@ def generate_uml_controller(document_type: str, json_dir):
         if ai_reply == "0":
             return jsonify({"error": "AI determines this is not a valid technical document"}), 400
 
-        # Clean up the Graphviz code from the response: remove triple backticks, if any.
+        # Clean up the Graphviz code from the response (remove triple backticks, if any).
         gv_code = ai_reply.replace("```graphviz", "").replace("```", "").strip()
 
         # Check if the code starts with a valid Graphviz directive.
