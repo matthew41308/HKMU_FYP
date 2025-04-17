@@ -11,8 +11,7 @@ def generate_uml_controller(document_type: str, json_dir):
         # Set the custom Graphviz folder location.
         # Assuming your custom Graphviz installation is located at /graphviz,
         # and the dot executable is at /graphviz/usr/bin/dot:
-        custom_dot_path = "/graphviz/usr/bin"
-        
+        custom_dot_path = "/project/src/graphviz/usr/bin"
         
         os.environ["PATH"] = custom_dot_path + os.pathsep + os.environ.get("PATH", "")
         
