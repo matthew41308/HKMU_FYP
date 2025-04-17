@@ -14,7 +14,7 @@ def generate_uml_controller(document_type: str, json_dir):
         custom_dot_path = "/graphviz/usr/bin"
         
         
-        os.environ["GRAPHVIZ_DOT"] = os.path.join(custom_dot_path, "dot")
+        os.environ["PATH"] = custom_dot_path + os.pathsep + os.environ.get("PATH", "")
         
         # STEP 1: Generate the full prompt for AI.
         prompt_template = get_prompt(document_type)
