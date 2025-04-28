@@ -11,11 +11,6 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends openjdk-21-jdk \
  && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# ----- copy application ---------------------------------------------------
-# Put everything under /project/src in the image
-WORKDIR /project
-COPY src/ ./src
-
 # Make the code importable
 ENV PYTHONPATH="/project/src" \
     PYTHONUNBUFFERED=1          \
