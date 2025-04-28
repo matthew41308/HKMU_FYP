@@ -2,7 +2,7 @@
 services:
 - type: web
   name: HKMU_FYP
-  runtime: python
+  runtime: docker
   repo: https://github.com/matthew41308/HKMU_FYP
   plan: standard
   envVars:
