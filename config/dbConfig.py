@@ -40,76 +40,38 @@ class DB:
         If a connection is already established, return the existing connection.
         """
         # Check if connection is already established
-        if (self.__class__._is_db_connected and 
-            self.__class__._db is not None and 
-            self.__class__._cursor is not None):
-            return self.__class__._db, self.__class__._cursor
+        if self._is_db_connected:
+            return self._db, self._cursor
 
+        config = {
+            "host": "127.0.0.1",
+            "port": int(os.getenv("MYSQL_TUNNEL_PORT", "3306")),
+            "user": os.getenv("MYSQL_USER"),
+            "password": os.getenv("MYSQL_PASSWORD"),
+            "database": "cd_insight",
+            "cursorclass": pymysql.cursors.DictCursor,
+            "autocommit": True,
+        }
         try:
-            print("🔹 Establishing SSH tunnel to MySQL server...")
-            # Create and start the SSH tunnel
-            ssh_key = self.get_ssh_key_path()
-            self.__class__._tunnel = SSHTunnelForwarder(
-                ('ssh.oregon.render.com', 22),
-                ssh_username='srv-cvmcbfs9c44c73ejoun0',
-                ssh_pkey=ssh_key,
-                remote_bind_address=('127.0.0.1', 3306)
-            )
-            self.__class__._tunnel.start()
-            print(f"✅ SSH tunnel established on local port: {self.__class__._tunnel.local_bind_port}")
-
-            # Prepare MySQL connection configuration using the tunnel's local port
-            config_local = {
-                'host': '127.0.0.1',
-                'port': self.__class__._tunnel.local_bind_port,
-                'user': self.get_mysql_user(),
-                'password': self.get_mysql_password(),
-                'database': 'cd_insight',
-                'cursorclass': pymysql.cursors.DictCursor,
-                'autocommit': True
-            }
-
-            print("🔹 Attempting to connect to MySQL via PyMySQL...")
-            self.__class__._db = pymysql.connect(**config_local)
-            self.__class__._cursor = self.__class__._db.cursor()
-            self.__class__._is_db_connected = True
-            print("✅ PyMySQL connected to MySQL via the SSH tunnel!")
-            return self.__class__._db, self.__class__._cursor
+            print("🔹 Connecting to MySQL through pre-opened tunnel …")
+            self._db = pymysql.connect(**config)
+            self._cursor = self._db.cursor()
+            print("✅ Connected!")
         except pymysql.MySQLError as e:
-            print(f"❌ PyMySQL connection failed: {e}")
-            self.__class__._is_db_connected = False
-            return None, None
-        except Exception as e:
-            print(f"❌ Failed to establish SSH tunnel: {e}")
-            self.__class__._is_db_connected = False
-            return None, None
+            print(f"❌ MySQL connection failed: {e}")
+            self._db = self._cursor = None
 
-    def check_connection(self):
-        """
-        Check if the database connection is alive.
-        
-        Returns:
-            bool: True if connection is alive, False otherwise.
-        """
-        try:
-            if self.__class__._db is not None:
-                self.__class__._db.ping(reconnect=True)
-            self.__class__._is_db_connected = True
-        except Exception:
-            self.__class__._is_db_connected = False
-        return self.__class__._is_db_connected
+        return self._db, self._cursor
 
     def close_db(self):
         """
-        Close the database connection and the SSH tunnel.
+        Close the database connection.
         """
-        if self.__class__._cursor:
-            self.__class__._cursor.close()
-        if self.__class__._db:
-            self.__class__._db.close()
-        if self.__class__._tunnel:
-            self.__class__._tunnel.stop()
-        self.__class__._is_db_connected = False
+        if self._cursor:
+            self._cursor.close()
+        if self._db:
+            self._db.close()
+        self._is_db_connected = False
 
     def reset_db(self):
         """
@@ -119,25 +81,22 @@ class DB:
         Returns:
             bool: True if reset succeeded, False otherwise.
         """
-        if not self.__class__._is_db_connected:
+        if not self._is_db_connected:
             self.db_connect()
-            if not self.__class__._is_db_connected:
-                print("❌ PyMySQL connection to MySQL failed")
-                return False
 
         try:
-            self.__class__._cursor.execute("SET FOREIGN_KEY_CHECKS=0;")
-            self.__class__._cursor.execute("TRUNCATE TABLE methodparameters;")
-            self.__class__._cursor.execute("TRUNCATE TABLE methods;")
-            self.__class__._cursor.execute("TRUNCATE TABLE components;")
-            self.__class__._cursor.execute("TRUNCATE TABLE variables;")
-            self.__class__._cursor.execute("TRUNCATE TABLE organizations;")
-            self.__class__._cursor.execute("SET FOREIGN_KEY_CHECKS=1;")
-            self.__class__._db.commit()
+            self._cursor.execute("SET FOREIGN_KEY_CHECKS=0;")
+            self._cursor.execute("TRUNCATE TABLE methodparameters;")
+            self._cursor.execute("TRUNCATE TABLE methods;")
+            self._cursor.execute("TRUNCATE TABLE components;")
+            self._cursor.execute("TRUNCATE TABLE variables;")
+            self._cursor.execute("TRUNCATE TABLE organizations;")
+            self._cursor.execute("SET FOREIGN_KEY_CHECKS=1;")
+            self._db.commit()
             print({"message": "✅ Database has been reset successfully!"})
             return True
         except Exception as e:
-            self.__class__._db.rollback()
+            self._db.rollback()
             print({"error": f"Reset failed: {e}"})
             return False
         finally:
@@ -145,31 +104,17 @@ class DB:
             self.close_db()
 
     def get_db(self):
-        """
-        Returns the currently established database connection,
-        or establishes a new one if needed.
-        """
-        if self.__class__._db is None or not self.__class__._is_db_connected:
+        if not self._is_db_connected:
             self.db_connect()
-        return self.__class__._db
+        return self._db
 
     def get_cursor(self):
-        """
-        Returns the currently established database cursor,
-        or establishes a new connection if needed.
-        """
-        if self.__class__._cursor is None or not self.__class__._is_db_connected:
+        if not self._is_db_connected:
             self.db_connect()
-        return self.__class__._cursor
+        return self._cursor
 
     def is_db_connected(self):
-        """
-        Check and return the current connection status.
-        
-        Returns:
-            bool: True if connected, False otherwise.
-        """
-        return self.__class__._is_db_connected
+        return self._is_db_connected
 
 
 if __name__ == "__main__":

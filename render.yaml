@@ -1,0 +1,21 @@
+# Exported from Render on 2025-04-27T06:10:01Z
+services:
+- type: web
+  name: HKMU_FYP
+  runtime: python
+  repo: https://github.com/matthew41308/HKMU_FYP
+  plan: standard
+  envVars:
+  - key: ssh_key
+    sync: false
+  - key: ssh_key.pub
+    sync: false
+  - fromGroup: mysql
+  region: singapore
+  buildCommand: pip install -r requirements.txt
+  startCommand: python wsgi.py
+  disk:
+    name: disk
+    mountPath: /var/data
+    sizeGB: 1
+version: "1"
