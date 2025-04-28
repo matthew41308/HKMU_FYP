@@ -12,8 +12,6 @@ services:
     sync: false
   - fromGroup: mysql
   region: singapore
-  buildCommand: pip install -r requirements.txt
-  startCommand: python wsgi.py
   disk:
     name: disk
     mountPath: /var/data
