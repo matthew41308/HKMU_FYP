@@ -16,4 +16,4 @@ RUN apt-get update \
 # ----- entry point --------------------------------------------------------
 RUN chmod +x entrypoint.sh  
 EXPOSE 8080
-ENTRYPOINT ["/project/entrypoint.sh"]
+ENTRYPOINT ["/entrypoint.sh"]
