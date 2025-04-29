@@ -19,7 +19,7 @@ ENV PYTHONPATH="./" \
     DB_TUNNEL_PORT=5432
 
 # ----- python dependencies -----------------------------------------------
-RUN pip install --no-cache-dir -r ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # ----- entry point --------------------------------------------------------
 RUN chmod +x ./entrypoint.sh
