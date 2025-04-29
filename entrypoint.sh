@@ -19,7 +19,8 @@ echo "Selected free local port: ${MYSQL_TUNNEL_PORT}"
 
 SECRET_KEY_SRC=/etc/secrets/ssh_key
 cp "$SECRET_KEY_SRC" /tmp/ssh_key && chmod 600 /tmp/ssh_key
-export PRIVATE_KEY = /tmp/ssh_key
+PRIVATE_KEY=/tmp/ssh_key
+export PRIVATE_KEY
 # ---------- open the tunnel ----------------------------------------------
 
 echo "Opening tunnel: \
