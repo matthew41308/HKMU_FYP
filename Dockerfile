@@ -7,7 +7,7 @@ RUN --mount=type=secret,id=ssh_key,dst=/etc/secrets/ssh_key cat /etc/secrets/ssh
 RUN --mount=type=secret,id=ssh_key_pub,dst=/etc/secrets/ssh_key.pub cat /etc/secrets/ssh_key.pub
 
 WORKDIR /project
-COPY src/ ./src
+COPY src/ ./HKMU_FYP
 RUN pip install --no-cache-dir -r src/requirements.txt
 
 # ----- extras (java) ------------------------------------------------------
@@ -16,13 +16,13 @@ RUN apt-get update \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Make the code importable
-ENV PYTHONPATH="/project/src" \
+ENV PYTHONPATH="./src" \
     PYTHONUNBUFFERED=1          \
     PORT=8080                   \
     DB_SSH_KEY=/etc/secrets/ssh_key \
     DB_TUNNEL_PORT=5432
 
 # ----- entry point --------------------------------------------------------
-RUN chmod +x /project/src/entrypoint.sh
+RUN chmod +x src/entrypoint.sh
 EXPOSE 8080
-ENTRYPOINT ["/project/src/entrypoint.sh"]
+ENTRYPOINT ["src/entrypoint.sh"]
