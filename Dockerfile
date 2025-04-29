@@ -7,7 +7,7 @@ RUN --mount=type=secret,id=ssh_key,dst=/etc/secrets/ssh_key cat /etc/secrets/ssh
 RUN --mount=type=secret,id=ssh_key_pub,dst=/etc/secrets/ssh_key.pub cat /etc/secrets/ssh_key.pub
 
 WORKDIR /project
-COPY src/ ./HKMU_FYP
+COPY project/src/ ./HKMU_FYP
 RUN pip install --no-cache-dir -r src/requirements.txt
 
 # ----- extras (java) ------------------------------------------------------
