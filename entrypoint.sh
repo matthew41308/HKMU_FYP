@@ -8,6 +8,26 @@ die()      { echo "FATAL: $*"; exit 1; }
 [[ -f /project/wsgi.py        ]] || die "wsgi.py not found"
 [[ -n "${PORT:-}"             ]] || die "PORT env var not set"
 
+##############################################################################
+# 1. Build ~/.ssh and write the private key                                  #
+##############################################################################
+install -d -m 700 ~/.ssh
+ssh-keyscan -H github.com >> ~/.ssh/known_hosts 2>/dev/null || true
+
+# Decode the environment variable into a file
+printf '%s' "$SSH_KEY" | base64 -d > ~/.ssh/id_ecdsa      # macOS: use -D
+chmod 600 ~/.ssh/id_ecdsa
+
+# ---------------------------------------------------------------------------
+# Self-test: read the key back and make sure it is usable and UNencrypted
+# ---------------------------------------------------------------------------
+if ! ssh-keygen -yf /dev/stdin >/dev/null 2>&1 < ~/.ssh/id_ecdsa ; then
+  die "SSH_KEY is encrypted, truncated or not a private key"
+fi
+echo "key OK"
+
+
+
 # Build a local .ssh folder on Render
 mkdir -p ~/.ssh
 
@@ -18,7 +38,6 @@ ssh-keyscan -H github.com >> ~/.ssh/known_hosts 2> /dev/null
 # Copy the secret file to the local .ssh folder and chmod it.
 # This grabs the SSH_KEY from the environment group and
 # reverses the Base64 encoding to transform it back into a file
-echo "$SSH_KEY" | base64 -d | ssh-keygen -yf - >/dev/null && echo "key OK" || echo "key BAD"
 echo "$SSH_KEY" | base64 -d > ~/.ssh/id_ecdsa
 chmod 400 ~/.ssh/id_ecdsa
 
@@ -39,7 +58,7 @@ ${SSH_MYSQL_USER}@${SSH_MYSQL_BASTION}"
 
 ssh  -o ExitOnForwardFailure=yes \
      -o StrictHostKeyChecking=no \
-     -i "~/.ssh/id_ecdsa" \
+     -i ~/.ssh/id_ecdsa \
      -Nf \
      -L "${MYSQL_TUNNEL_PORT}:${SSH_MYSQL_HOST}:${SSH_MYSQL_HOST_PORT}" \
      "${SSH_MYSQL_USER}@${SSH_MYSQL_BASTION}" \
