@@ -17,6 +17,11 @@ PY
 )
 echo "Selected free local port: ${MYSQL_TUNNEL_PORT}"
 
+SECRET_KEY_SRC=/etc/secrets/ssh_key
+PRIVATE_KEY=/tmp/ssh_key
+cp "$SECRET_KEY_SRC" "$PRIVATE_KEY"
+chmod 600 "$PRIVATE_KEY"
+
 # ---------- open the tunnel ----------------------------------------------
 
 echo "Opening tunnel: \
