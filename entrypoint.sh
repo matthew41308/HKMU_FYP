@@ -8,11 +8,20 @@ die()      { echo "FATAL: $*"; exit 1; }
 [[ -f /project/wsgi.py        ]] || die "wsgi.py not found"
 [[ -n "${PORT:-}"             ]] || die "PORT env var not set"
 
-# ---------- choose a free local port -------------------------------------
+# Build a local .ssh folder on Render
+mkdir -p ~/.ssh
 
+# Add GitHub as a known host so it does not prompt you to add
+# GitHub's IP address to known_hosts
+ssh-keyscan -H github.com >> ~/.ssh/known_hosts 2> /dev/null
+
+# Copy the secret file to the local .ssh folder and chmod it.
+# This grabs the SSH_KEY from the environment group and
+# reverses the Base64 encoding to transform it back into a file
 echo "$SSH_KEY" | base64 -d > ~/.ssh/id_ecdsa
 chmod 400 ~/.ssh/id_ecdsa
 
+# ---------- choose a free local port -------------------------------------
 MYSQL_TUNNEL_PORT=$(python - <<'PY'
 import socket, json, os
 s = socket.socket(); s.bind(("127.0.0.1", 0))
