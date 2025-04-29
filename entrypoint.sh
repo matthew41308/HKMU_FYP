@@ -18,7 +18,7 @@ PY
 echo "Selected free local port: ${MYSQL_TUNNEL_PORT}"
 
 SECRET_KEY_SRC=$PRIVATE_KEY_PATH
-PRIVATE_KEY=/tmp/ssh_key
+PRIVATE_KEY=./
 cp "$SECRET_KEY_SRC" "$PRIVATE_KEY"
 chmod 600 "$PRIVATE_KEY"
 
