@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # entrypoint.sh
 set -Eeuo pipefail
-
-log() { printf '[%(%FT%T%z)T] %s\n' -1 "$*" >&2; }   # timestamped log to stderr
-die() { log "FATAL: $*"; exit 1; }
+DEBUG=${DEBUG:-false}
+log() { $DEBUG && log "$*"; }
+error_log() { printf '[%(%FT%T%z)T] %s\n' -1 "$*" >&2; }   # timestamped log to stderr
+die() { error_log "FATAL: $*"; exit 1; }
 
 
 [[ -f /project/entrypoint.sh ]]  || die "entrypoint.sh not found in /project"
@@ -16,6 +17,8 @@ export MYSQL_TUNNEL_PORT=$(ssh -o StrictHostKeyChecking=no -i "$PRIVATE_KEY_PATH
   -v 2>&1 | grep -oE 'Allocated port [0-9]+' | awk '{print $3}')
 
 echo "SSH tunnel up on 127.0.0.1:$MYSQL_TUNNEL_PORT"
+
+log "PRIVATE_KEY_PATH : $PRIVATE_KEY_PATH"
 
 # Launch Gunicorn; workers inherit MYSQL_TUNNEL_PORT
 exec gunicorn "wsgi:app" \
