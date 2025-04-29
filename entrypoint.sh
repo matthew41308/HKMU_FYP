@@ -36,4 +36,4 @@ debug "Launching Gunicorn on port ${PORT}"
 exec python -m gunicorn "wsgi:app" \
      --chdir /project \
      --bind "0.0.0.0:${PORT}" \
-     --workers 4
+     --workers 2
