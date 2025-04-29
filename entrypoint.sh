@@ -1,37 +1,41 @@
 #!/usr/bin/env bash
-# entrypoint.sh
 set -Eeuo pipefail
 
-die()   { echo "FATAL: $*"; exit 1; }
+# ---------- helpers -------------------------------------------------------
+die()      { echo "FATAL: $*"; exit 1; }
 
+# ---------- sanity checks -------------------------------------------------
+[[ -f /project/wsgi.py        ]] || die "wsgi.py not found"
+[[ -n "${PORT:-}"             ]] || die "PORT env var not set"
 
-[[ -f /project/entrypoint.sh ]]  || die "entrypoint.sh not found in /project"
-[[ -f /project/wsgi.py ]]        || die "wsgi.py not found"
-[[ -n "${PORT:-}" ]]             || die "Environment variable PORT is not set"
+# ---------- choose a free local port -------------------------------------
+MYSQL_TUNNEL_PORT=$(python - <<'PY'
+import socket, json, os
+s = socket.socket(); s.bind(("127.0.0.1", 0))
+print(s.getsockname()[1]); s.close()
+PY
+)
+echo "Selected free local port: ${MYSQL_TUNNEL_PORT}"
 
-echo "Opening tunnel through $SSH_MYSQL_BASTION to $SSH_MYSQL_HOST:$SSH_MYSQL_HOST_PORT"
+# ---------- open the tunnel ----------------------------------------------
 
-# Allocate a free local port
-MYSQL_TUNNEL_PORT=$(
-  ssh  -o ExitOnForwardFailure=yes \
-      -o StrictHostKeyChecking=no \
-      -i "$PRIVATE_KEY_PATH" \
-      -NfL 0:"$SSH_MYSQL_HOST":"$SSH_MYSQL_HOST_PORT" \
-      "$SSH_MYSQL_USER@$SSH_MYSQL_BASTION" \
-      -v 2>&1 |
-  grep -oE 'port [0-9]+\.?$'      |   # grab “… port <digits>”
-  awk '{print $2}'                 |   # keep the number
-  head -n1                             # first match
-) || die "Couldn't obtain tunnel port from ssh output"
+echo "Opening tunnel: \
+-L ${MYSQL_TUNNEL_PORT}:${SSH_MYSQL_HOST}:${SSH_MYSQL_HOST_PORT} \
+${SSH_MYSQL_USER}@${SSH_MYSQL_BASTION}"
 
+ssh  -o ExitOnForwardFailure=yes \
+     -o StrictHostKeyChecking=no \
+     -i "$PRIVATE_KEY_PATH" \
+     -Nf \
+     -L "${MYSQL_TUNNEL_PORT}:${SSH_MYSQL_HOST}:${SSH_MYSQL_HOST_PORT}" \
+     "${SSH_MYSQL_USER}@${SSH_MYSQL_BASTION}" \
+     || die "SSH tunnel setup failed"
 
-echo "SSH tunnel up on 127.0.0.1:$MYSQL_TUNNEL_PORT"
+echo  "SSH tunnel up on 127.0.0.1:${MYSQL_TUNNEL_PORT}"
 
-echo "MYSQL_TUNNEL_PORT=${MYSQL_TUNNEL_PORT}"
-
-# Launch Gunicorn
-echo "Launching Gunicorn on port ${PORT}"
+# ---------- launch Gunicorn ----------------------------------------------
 exec python -m gunicorn "wsgi:app" \
      --chdir /project \
      --bind "0.0.0.0:${PORT}" \
-     --workers 2
+     --workers 4 \
+     --env MYSQL_TUNNEL_PORT="${MYSQL_TUNNEL_PORT}"
