@@ -2,10 +2,6 @@
 # syntax = docker/dockerfile:1.2
 FROM python:3.11.11-bookworm
 
-#Mount secret files from render
-RUN --mount=type=secret,id=ssh_key,dst=/etc/secrets/ssh_key cat /etc/secrets/ssh_key
-RUN --mount=type=secret,id=ssh_key_pub,dst=/etc/secrets/ssh_key.pub cat /etc/secrets/ssh_key.pub
-
 WORKDIR /project
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
@@ -18,6 +14,6 @@ RUN apt-get update \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # ----- entry point --------------------------------------------------------
-RUN chmod +x entrypoint.sh
+RUN chmod +x entrypoint.sh  
 EXPOSE 8080
-ENTRYPOINT ["entrypoint.sh"]
+ENTRYPOINT ["/project/entrypoint.sh"]

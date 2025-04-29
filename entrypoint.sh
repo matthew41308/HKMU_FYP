@@ -1,8 +1,9 @@
 # entrypoint.sh
+#!/usr/bin/env bash
 set -euo pipefail
 
 # Allocate a free local port and export it
-export MYSQL_TUNNEL_PORT=$(ssh -o StrictHostKeyChecking=no -i "$SSH_MYSQL_KEY" \
+export MYSQL_TUNNEL_PORT=$(ssh -o StrictHostKeyChecking=no -i "$PRIVATE_KEY_PATH" \
   -NfL 0:$SSH_MYSQL_HOST:$SSH_MYSQL_HOST_PORT "$SSH_MYSQL_HOST@$SSH_MYSQL_BASTION" \
   -v 2>&1 | grep -oE 'Allocated port [0-9]+' | awk '{print $3}')
 
