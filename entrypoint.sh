@@ -17,7 +17,7 @@ MYSQL_TUNNEL_PORT=$(
       -o StrictHostKeyChecking=no \
       -i "$PRIVATE_KEY_PATH" \
       -NfL 0:"$SSH_MYSQL_HOST":"$SSH_MYSQL_HOST_PORT" \
-      "$SSH_MYSQL_HOST@$SSH_MYSQL_BASTION" \
+      "$SSH_MYSQL_USER@$SSH_MYSQL_BASTION" \
       -v 2>&1 |
   grep -oE 'port [0-9]+\.?$'      |   # grab “… port <digits>”
   awk '{print $2}'                 |   # keep the number
