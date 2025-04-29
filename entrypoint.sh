@@ -10,6 +10,6 @@ echo "SSH tunnel up on 127.0.0.1:$MYSQL_TUNNEL_PORT"
 
 # Launch Gunicorn; workers inherit MYSQL_TUNNEL_PORT
 exec gunicorn "wsgi:app" \
-    --chdir /project/src \
+    --chdir /project \
     --bind "0.0.0.0:${PORT}" \
     --workers 4
