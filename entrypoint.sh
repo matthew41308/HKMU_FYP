@@ -18,6 +18,7 @@ ssh-keyscan -H github.com >> ~/.ssh/known_hosts 2> /dev/null
 # Copy the secret file to the local .ssh folder and chmod it.
 # This grabs the SSH_KEY from the environment group and
 # reverses the Base64 encoding to transform it back into a file
+echo "$SSH_KEY" | base64 -d | ssh-keygen -yf - >/dev/null && echo "key OK" || echo "key BAD"
 echo "$SSH_KEY" | base64 -d > ~/.ssh/id_ecdsa
 chmod 400 ~/.ssh/id_ecdsa
 
