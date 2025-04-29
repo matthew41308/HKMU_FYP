@@ -25,7 +25,7 @@ ${SSH_MYSQL_USER}@${SSH_MYSQL_BASTION}"
 
 ssh  -o ExitOnForwardFailure=yes \
      -o StrictHostKeyChecking=no \
-     -i "$ssh_key" \
+     -i "/run/secrets/ssh_key" \
      -Nf \
      -L "${MYSQL_TUNNEL_PORT}:${SSH_MYSQL_HOST}:${SSH_MYSQL_HOST_PORT}" \
      "${SSH_MYSQL_USER}@${SSH_MYSQL_BASTION}" \

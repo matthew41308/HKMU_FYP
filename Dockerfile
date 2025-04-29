@@ -7,7 +7,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-
+RUN --mount=type=secret,id=ssh_key,dst=/etc/secrets/ssh_key cat /etc/secrets/ssh_key
 # ----- extras (java) ------------------------------------------------------
 RUN apt-get update \
     && apt-get install -y --no-install-recommends openjdk-17-jdk \
