@@ -17,11 +17,6 @@ PY
 )
 echo "Selected free local port: ${MYSQL_TUNNEL_PORT}"
 
-SECRET_KEY_SRC=$PRIVATE_KEY_PATH
-PRIVATE_KEY=./
-cp "$SECRET_KEY_SRC" "$PRIVATE_KEY"
-chmod 600 "$PRIVATE_KEY"
-
 # ---------- open the tunnel ----------------------------------------------
 
 echo "Opening tunnel: \
@@ -30,7 +25,7 @@ ${SSH_MYSQL_USER}@${SSH_MYSQL_BASTION}"
 
 ssh  -o ExitOnForwardFailure=yes \
      -o StrictHostKeyChecking=no \
-     -i "$PRIVATE_KEY" \
+     -i "$ssh_key" \
      -Nf \
      -L "${MYSQL_TUNNEL_PORT}:${SSH_MYSQL_HOST}:${SSH_MYSQL_HOST_PORT}" \
      "${SSH_MYSQL_USER}@${SSH_MYSQL_BASTION}" \
