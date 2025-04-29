@@ -1,6 +1,14 @@
-# entrypoint.sh
 #!/usr/bin/env bash
-set -euo pipefail
+# entrypoint.sh
+set -Eeuo pipefail
+
+log() { printf '[%(%FT%T%z)T] %s\n' -1 "$*" >&2; }   # timestamped log to stderr
+die() { log "FATAL: $*"; exit 1; }
+
+
+[[ -f /project/entrypoint.sh ]]  || die "entrypoint.sh not found in /project"
+[[ -f /project/wsgi.py ]]        || die "wsgi.py not found"
+[[ -n "${PORT:-}" ]]             || die "Environment variable PORT is not set"
 
 # Allocate a free local port and export it
 export MYSQL_TUNNEL_PORT=$(ssh -o StrictHostKeyChecking=no -i "$PRIVATE_KEY_PATH" \
