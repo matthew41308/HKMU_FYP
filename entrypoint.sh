@@ -9,6 +9,10 @@ die()      { echo "FATAL: $*"; exit 1; }
 [[ -n "${PORT:-}"             ]] || die "PORT env var not set"
 
 # ---------- choose a free local port -------------------------------------
+
+echo "$SSH_KEY" | base64 -d > ~/.ssh/id_ecdsa
+chmod 400 ~/.ssh/id_ecdsa
+
 MYSQL_TUNNEL_PORT=$(python - <<'PY'
 import socket, json, os
 s = socket.socket(); s.bind(("127.0.0.1", 0))
@@ -17,9 +21,6 @@ PY
 )
 echo "Selected free local port: ${MYSQL_TUNNEL_PORT}"
 
-SECRET_KEY_SRC=/etc/secrets/ssh_key
-cp "$SECRET_KEY_SRC" /tmp/ssh_key && chmod 600 /tmp/ssh_key
-export PRIVATE_KEY=/tmp/ssh_key
 # ---------- open the tunnel ----------------------------------------------
 
 echo "Opening tunnel: \
@@ -28,7 +29,7 @@ ${SSH_MYSQL_USER}@${SSH_MYSQL_BASTION}"
 
 ssh  -o ExitOnForwardFailure=yes \
      -o StrictHostKeyChecking=no \
-     -i "$PRIVATE_KEY" \
+     -i "~/.ssh/id_ecdsa" \
      -Nf \
      -L "${MYSQL_TUNNEL_PORT}:${SSH_MYSQL_HOST}:${SSH_MYSQL_HOST_PORT}" \
      "${SSH_MYSQL_USER}@${SSH_MYSQL_BASTION}" \
