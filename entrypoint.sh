@@ -16,9 +16,12 @@ export MYSQL_TUNNEL_PORT=$(ssh -o StrictHostKeyChecking=no -i "$PRIVATE_KEY_PATH
   -NfL 0:$SSH_MYSQL_HOST:$SSH_MYSQL_HOST_PORT "$SSH_MYSQL_HOST@$SSH_MYSQL_BASTION" \
   -v 2>&1 | grep -oE 'Allocated port [0-9]+' | awk '{print $3}')
 
+
 echo "SSH tunnel up on 127.0.0.1:$MYSQL_TUNNEL_PORT"
 
 log "PRIVATE_KEY_PATH : $PRIVATE_KEY_PATH"
+log "SSH statement : ssh -o StrictHostKeyChecking=no -i "$PRIVATE_KEY_PATH" \
+    -NfL 0:$SSH_MYSQL_HOST:$SSH_MYSQL_HOST_PORT "$SSH_MYSQL_HOST@$SSH_MYSQL_BASTION"
 
 # Launch Gunicorn; workers inherit MYSQL_TUNNEL_PORT
 exec gunicorn "wsgi:app" \
