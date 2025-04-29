@@ -16,7 +16,7 @@ RUN apt-get update \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Make the code importable
-ENV PYTHONPATH="src" \
+ENV PYTHONPATH="project/src" \
     PYTHONUNBUFFERED=1          \
     PORT=8080                   \
     DB_SSH_KEY=/etc/secrets/ssh_key \
