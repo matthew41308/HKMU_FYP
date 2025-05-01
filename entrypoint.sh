@@ -39,14 +39,14 @@ export MYSQL_TUNNEL_PORT
 # ---------- open the tunnel ----------------------------------------------
 
 echo "Opening tunnel: \
--L ${MYSQL_TUNNEL_PORT}:${SSH_MYSQL_HOST}:${SSH_MYSQL_HOST_PORT} \
+-L ${MYSQL_TUNNEL_PORT}:${SSH_MYSQL_HOST}:3306 \
 ${SSH_MYSQL_USER}@${SSH_MYSQL_BASTION}"
 
 ssh  -o ExitOnForwardFailure=yes \
      -o StrictHostKeyChecking=no \
      -i ~/.ssh/id_ecdsa \
      -Nf \
-     -L "${MYSQL_TUNNEL_PORT}:${SSH_MYSQL_HOST}:${SSH_MYSQL_HOST_PORT}" \
+     -L "${MYSQL_TUNNEL_PORT}:${SSH_MYSQL_HOST}:3306" \
      "${SSH_MYSQL_USER}@${SSH_MYSQL_BASTION}" \
      || die "SSH tunnel setup failed"
 
