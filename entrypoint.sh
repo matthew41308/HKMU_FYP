@@ -56,5 +56,5 @@ echo  "SSH tunnel up on 127.0.0.1:${MYSQL_TUNNEL_PORT}"
 exec python -m gunicorn "wsgi:app" \
      --chdir /project \
      --bind "0.0.0.0:${PORT}" \
-     --workers 4 \
+     --workers 2 \
      --env MYSQL_TUNNEL_PORT="${MYSQL_TUNNEL_PORT}"
