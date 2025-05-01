@@ -15,7 +15,7 @@ install -d -m 700 ~/.ssh
 ssh-keyscan -H github.com >> ~/.ssh/known_hosts 2>/dev/null || true
 
 
-printf '%s' "$SSH_KEY" > ~/.ssh/id_ecdsa        
+printf '%s' $SSH_KEY | base64 -d > ~/.ssh/id_ecdsa        
 chmod 600 ~/.ssh/id_ecdsa
 
 # ---------------------------------------------------------------------------
