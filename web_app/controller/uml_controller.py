@@ -30,11 +30,10 @@ def load_latest_txt(json_dir: str) -> Tuple[str, str]:
 
 def generate_uml(document_type: str, json_dir: str):
     try:
-
         # ─── STEP 1: build the prompt ───────────────────────────────────────────
         prompt = get_prompt(document_type)
         file_name, exported_text = load_latest_txt(json_dir)
-
+        print(f"uml_controller file name : {file_name}")
         # ─── STEP 2: call OpenAI for DOT code ───────────────────────────────────
         client = get_openai()
 

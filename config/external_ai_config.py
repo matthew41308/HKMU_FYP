@@ -35,5 +35,6 @@ def upload_file_for_chat(client: AzureOpenAI, name: str, text: str) -> str:
         "file": (name, text.encode("utf-8"), "text/plain"),
         "purpose": "assistants"
     }
+    print(f"external_ai_config file name : {name}")
     file_obj = client.files.create(**payload)
     return file_obj.id
