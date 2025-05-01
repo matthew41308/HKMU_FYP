@@ -58,6 +58,7 @@ def generate_uml(document_type: str, json_dir: str):
         )
 
         ai_reply = response.choices[0].message.content.strip()
+        client.files.delete(file_id)
         if ai_reply == "0":
             return jsonify({"error": "AI determined this is not a valid technical document"}), 400
 

@@ -24,7 +24,7 @@ def get_prompt(document_type: str) -> str:
     You are given that the start of the data indicate the order of different data that will appear. 
     From the relationship of the data, 
     please try to draw a {document_type} to illustrate the design of the project. 
-    Please only send back the PlantUML code without any explanation.
+    Please only send back the DOT syntax code without any explanation.
     """
 
 def upload_file_for_chat(client: AzureOpenAI, name: str, text: str) -> str:
