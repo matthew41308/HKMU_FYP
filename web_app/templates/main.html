@@ -44,7 +44,7 @@
                 <input type="text" id="customType" placeholder="e.g. Work Flow Diagram" />
               </div>
               <button onclick="generateUML()">⚙️ Generate UML</button>
-              <button onclick="downloadUML()">📥 Download Diagram (PDF)/button>
+              <button onclick="downloadPDF()">📥 Download Diagram (PDF)/button>
               <button onclick="downloadDOT()">📝 Download DOT file</button>
               <embed id="umlPdfViewer" src="" type="application/pdf" style="width: 100%; height: 600px;" />
           </div>
@@ -53,6 +53,7 @@
         <script>
             let pdfBlob; 
             let dotText; 
+            let filePrefix='';
             function startLoading() 
             {
                 // Disable all buttons.
@@ -120,6 +121,18 @@
                 });
             }
 
+            function sanitizeFileName(name) 
+            {
+                /*
+                * Remove characters that are invalid or problematic in most file systems:
+                *    / \ ? % * : | " < > and convert whitespace runs to single underscore.
+                */
+                return name
+                    .replace(/[\/\\?%*:|"<>]/g, '')
+                    .replace(/\s+/g, '_')
+                    .trim() || 'diagram';
+            }
+
             function analyse_folder()
             {
                 startLoading();
@@ -164,7 +177,9 @@
     
             function generateUML() 
             {
-                let document_type = document.getElementById("document_type").value;
+                const projectNameRaw = document.getElementById('projectName').value;
+                filePrefix = sanitizeFileName(projectNameRaw);
+                let document_type = document.getElementById("document_type")?.value || '';
                 if (!document_type) {
                     alert("❌ Please select document type.");
                     return;
@@ -195,31 +210,29 @@
                     // Expecting a JSON response with keys "pdf" (base64 encoded PDF) and "dot"
                     return response.json();
                 })
-                .then(data => {
-                    // Decode base64 PDF to a Blob.
-                    const base64Data = data.pdf;
-                    const byteCharacters = atob(base64Data);
-                    const byteNumbers = new Array(byteCharacters.length);
-                    for (let i = 0; i < byteCharacters.length; i++) {
-                        byteNumbers[i] = byteCharacters.charCodeAt(i);
-                    }
-                    const byteArray = new Uint8Array(byteNumbers);
-                    pdfBlob = new Blob([byteArray], { type: "application/pdf" });
+                .then(data => 
+                            {
+                                // Decode base64 PDF to a Blob.
+                                const byteArray = Uint8Array.from(atob(data.pdf), c => c.charCodeAt(0));
+                                pdfBlob = new Blob([byteArray], { type: 'application/pdf' });
 
-                    // Update the embed element with the generated UML PDF diagram.
-                    document.getElementById("umlPdfViewer").src = URL.createObjectURL(pdfBlob);
+                                // Update the embed element with the generated UML PDF diagram.
+                                document.getElementById("umlPdfViewer").src = URL.createObjectURL(pdfBlob);
 
-                    // Store the DOT text generated on the server.
-                    dotText = data.dot;
+                                // Store the DOT text generated on the server.
+                                dotText = data.dot;
 
-                    alert("✅ UML diagram generated!");
-                })
-                .catch(error => {
-                    alert(error.message);
-                })
-                .finally(() => {
-                    stopLoading();
-                });
+                                alert("✅ UML diagram generated!");
+                            }
+                    ).catch(error => 
+                                    {
+                                     alert(error.message);
+                                    }
+                            ).finally(() => 
+                                        {
+                                            stopLoading();
+                                        }
+                                    );
             }
 
             function toggleCustomInput() {
@@ -232,16 +245,17 @@
                 }
             }
 
-            function downloadUML() 
+            function downloadPDF() 
             {
-                if (!pdfBlob) {
-                    alert("No UML diagram has been generated yet.");
+                if (!pdfBlob) 
+                {
+                    alert('No UML diagram has been generated yet.');
                     return;
                 }
                 const url = URL.createObjectURL(pdfBlob);
-                const a = document.createElement("a");
+                const a = document.createElement('a');
                 a.href = url;
-                a.download = "uml_diagram.pdf";
+                a.download = `${filePrefix}.pdf`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
@@ -249,15 +263,16 @@
 
             function downloadDOT() 
             {
-                if (!dotText) {
-                    alert("No DOT content available.");
+                if (!dotText) 
+                {
+                    alert('No DOT content available.');
                     return;
                 }
-                const blob = new Blob([dotText], { type: "text/plain" });
+                const blob = new Blob([dotText], { type: 'text/plain' });
                 const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
+                const a = document.createElement('a');
                 a.href = url;
-                a.download = "diagram.dot";
+                a.download = `${filePrefix}.dot`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);

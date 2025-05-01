@@ -15,3 +15,7 @@ sshtunnel
 graphviz
 
 gunicorn
+
+fastapi
+
+uvicorn

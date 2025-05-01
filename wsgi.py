@@ -2,11 +2,11 @@ from web_app import init_app
 import os, sys, json,traceback
 from flask import Flask, request, render_template, jsonify, send_file,redirect
 from werkzeug.utils import secure_filename
-from web_app.controller.metaData_generation import process_folder
-from web_app.controller.create_useCase_diagram import export_to_json
+from web_app.controller.analyzer_controller import process_folder
+from web_app.controller.json_controller import export_to_json
 from web_app.model.json_for_useCase import get_json_for_useCase
 import shutil
-from web_app.controller.create_uml import generate_uml_controller
+from web_app.controller.uml_controller import generate_uml
 from web_app.model.user_model import login_verification
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "/")))
 app = init_app()
@@ -180,8 +180,6 @@ def analyse_folder():
             "traceback": traceback.format_exc()
         }), 500
 
-
-
 @app.route("/results", methods=["GET"])
 def get_results():
     try:
@@ -207,21 +205,7 @@ def generate_uml():
     
     document_type = request.form.get("document_type")
 
-    return generate_uml_controller(document_type, app.config["JSON_DIR"])
-
-@app.route("/download_uml", methods=["GET"])
-def download_uml():
-    uml_path = os.path.abspath(app.config["OUTPUT_PNG"])
-    if os.path.exists(uml_path):
-        return send_file(uml_path, as_attachment=True, mimetype="image/png")
-    return jsonify({"error": "UML diagram does not exist！"}), 404
-
-@app.route("/download_puml", methods=["GET"])
-def download_puml():
-    puml_path = os.path.abspath(app.config["OUTPUT_PUML"])
-    if os.path.exists(puml_path):
-        return send_file(puml_path, as_attachment=True, mimetype="text/plain")
-    return jsonify({"error": "PUML file does not exist！"}), 404
+    return generate_uml(document_type, app.config["JSON_DIR"])
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0')

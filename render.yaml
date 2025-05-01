@@ -6,10 +6,6 @@ services:
   repo: https://github.com/matthew41308/HKMU_FYP
   plan: standard
   envVars:
-  - key: ssh_key
-    sync: false
-  - key: ssh_key.pub
-    sync: false
   - fromGroup: mysql
   region: singapore
   disk:
