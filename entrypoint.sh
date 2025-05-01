@@ -34,6 +34,7 @@ print(s.getsockname()[1]); s.close()
 PY
 )
 echo "Selected free local port: ${MYSQL_TUNNEL_PORT}"
+export MYSQL_TUNNEL_PORT
 
 # ---------- open the tunnel ----------------------------------------------
 

@@ -45,7 +45,7 @@ class DB:
 
         config = {
             "host": "127.0.0.1",
-            "port": int(os.getenv("SSH_MYSQL_HOST_PORT", "3306")),
+            "port": int(os.getenv("MYSQL_TUNNEL_PORT")),
             "user": os.getenv("MYSQL_USER"),
             "password": os.getenv("MYSQL_PASSWORD"),
             "database": "cd_insight",
