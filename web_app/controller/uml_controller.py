@@ -8,7 +8,7 @@ from typing import Tuple
 from flask import jsonify
 import graphviz
 
-from config.external_ai_config import get_prompt, get_openai, upload_file_for_chat
+from config.external_ai_config import get_prompt, get_openai
 
 
 def load_latest_txt(json_dir: str) -> Tuple[str, str]:
@@ -31,13 +31,11 @@ def load_latest_txt(json_dir: str) -> Tuple[str, str]:
 def generate_uml(document_type: str, json_dir: str):
     try:
         # ─── STEP 1: build the prompt ───────────────────────────────────────────
-        prompt = get_prompt(document_type)
         file_name, exported_text = load_latest_txt(json_dir)
+        prompt = get_prompt(document_type,exported_text )
         print(f"uml_controller file name : {file_name}")
         # ─── STEP 2: call OpenAI for DOT code ───────────────────────────────────
         client = get_openai()
-
-        file_id = upload_file_for_chat(client, file_name, exported_text)
 
         response = client.chat.completions.create(
             
@@ -49,7 +47,6 @@ def generate_uml(document_type: str, json_dir: str):
                 },
                 {"role": "user", 
                  "content": prompt,
-                 "file_ids":[file_id]
                  },
             ],
             model="o3-mini",
@@ -57,7 +54,6 @@ def generate_uml(document_type: str, json_dir: str):
         )
 
         ai_reply = response.choices[0].message.content.strip()
-        client.files.delete(file_id)
         if ai_reply == "0":
             return jsonify({"error": "AI determined this is not a valid technical document"}), 400
 
