@@ -7,7 +7,7 @@ def get_openai():
     client = AzureOpenAI(
     azure_endpoint=os.getenv("OPENAI_ENDPOINT"),
     api_key=os.getenv("OPENAI_API_KEY"),
-    api_version="2025-01-31"
+    api_version="2024-12-01-preview"
     )
     return client
 
