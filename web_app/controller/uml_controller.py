@@ -41,7 +41,7 @@ def generate_uml(document_type: str, json_dir: str):
         file_id = upload_file_for_chat(client, file_name, exported_text)
 
         response = client.chat.completions.create(
-            model="o3-mini",
+            
             messages=[
                 {
                     "role": "system",
@@ -53,8 +53,8 @@ def generate_uml(document_type: str, json_dir: str):
                  "file_ids":[file_id]
                  },
             ],
-            temperature=0,
-            max_tokens=4096,
+            model="o3-mini",
+            max_completion_tokens=10000
         )
 
         ai_reply = response.choices[0].message.content.strip()
