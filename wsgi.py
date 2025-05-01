@@ -211,14 +211,7 @@ def get_uml():
     upload_folder=app.config["UPLOAD_FOLDER"]
     json_dir = f'{upload_folder}/{user_name}/Json_toAI'
 
-    json_files = [f for f in os.listdir(json_dir) if f.endswith(".json")]
-    if not json_files:
-        return jsonify({"error": "No JSON file found in Json_toAI directory."}), 404
-
-    # Assume there is only one JSON file, so pick the first one.
-    json_file = os.path.join(json_dir, json_files[0])
-
-    return generate_uml(document_type, json_file)
+    return generate_uml(document_type, json_dir)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0')
