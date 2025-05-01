@@ -10,9 +10,7 @@ def init_app():
     conn = DB()
     db = conn.get_db()
     cursor = conn.get_cursor()
-    isDBconnected=conn.is_db_connected()
-    if not isDBconnected:
-        raise Exception("Failed to establish database connection")
+    
     # Store the db and cursor in the app config so they can be used globally
     app.config['db'] = db
     app.config['cursor'] = cursor

@@ -7,8 +7,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 class DB:
     _db = None
     _cursor = None
-    _tunnel = None
-    _is_db_connected = False
 
     @classmethod
     def get_mysql_password(cls):
@@ -24,23 +22,13 @@ class DB:
             raise EnvironmentError("Environment variable 'MYSQL_USER' is not set.")
         return mysql_user
 
-    @classmethod
-    def get_ssh_key_path(cls):
-        """
-        Verify that the SSH key file exists and return its path.
-        """
-        key_path = '/etc/secrets/ssh_key'
-        if not os.path.isfile(key_path):
-            raise FileNotFoundError(f"SSH key file not found: {key_path}")
-        return key_path
-
     def db_connect(self):
         """
         Establish a connection to MySQL via an SSH tunnel.
         If a connection is already established, return the existing connection.
         """
         # Check if connection is already established
-        if self._is_db_connected:
+        if self._db:
             return self._db, self._cursor
 
         config = {
@@ -71,7 +59,6 @@ class DB:
             self._cursor.close()
         if self._db:
             self._db.close()
-        self._is_db_connected = False
 
     def reset_db(self):
         """
@@ -81,7 +68,7 @@ class DB:
         Returns:
             bool: True if reset succeeded, False otherwise.
         """
-        if not self._is_db_connected:
+        if not self._db:
             self.db_connect()
 
         try:
@@ -104,17 +91,17 @@ class DB:
             self.close_db()
 
     def get_db(self):
-        if not self._is_db_connected:
+        if not self._db:
             self.db_connect()
         return self._db
 
     def get_cursor(self):
-        if not self._is_db_connected:
+        if not self._db:
             self.db_connect()
         return self._cursor
 
     def is_db_connected(self):
-        return self._is_db_connected
+        return self._db
 
 
 if __name__ == "__main__":
