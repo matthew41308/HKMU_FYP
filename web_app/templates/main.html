@@ -197,7 +197,7 @@
                 const formData = new FormData();
                 formData.append("document_type", document_type);
 
-                fetch("/generate_uml", {
+                fetch("/get_uml", {
                     method: "POST",
                     body: formData
                 })

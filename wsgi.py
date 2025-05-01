@@ -198,8 +198,8 @@ def get_results():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route("/generate_uml", methods=["POST"])
-def generate_uml():
+@app.route("/get_uml", methods=["POST"])
+def get_uml():
     if not (app.config["user_name"] and app.config["is_login"]):
         return redirect("/")
     

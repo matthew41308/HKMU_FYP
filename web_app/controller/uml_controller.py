@@ -11,18 +11,6 @@ import graphviz
 from config.external_ai_config import get_prompt, get_openai
 
 
-def ensure_graphviz_on_path() -> None:
-    """
-    Make sure the `dot` executable can be found.
-
-    • If GRAPHVIZ_BIN_DIR is set, prepend it to $PATH.
-    • Otherwise assume the system package ( /usr/bin/dot ) is present.
-    """
-    custom_dir = os.getenv("GRAPHVIZ_BIN_DIR")
-    if custom_dir:
-        os.environ["PATH"] = f"{custom_dir}{os.pathsep}{os.environ.get('PATH', '')}"
-
-
 def load_latest_txt(json_dir: str) -> Tuple[str, str]:
     """
     Return (file_name, file_content) for the newest *.txt file in `json_dir`.
@@ -41,8 +29,6 @@ def load_latest_txt(json_dir: str) -> Tuple[str, str]:
 
 def generate_uml(document_type: str, json_dir: str):
     try:
-        # ─── STEP 0: ensure Graphviz is reachable ───────────────────────────────
-        ensure_graphviz_on_path()
 
         # ─── STEP 1: build the prompt ───────────────────────────────────────────
         prompt = get_prompt(document_type)
