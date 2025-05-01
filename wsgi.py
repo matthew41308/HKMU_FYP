@@ -23,12 +23,12 @@ def login():
     if login_verification(app.config["user_name"], user_pwd):
         upload_folder=app.config["UPLOAD_FOLDER"]
         app.config["is_login"]=True
-        app.config["JSON_DIR"] = f'{upload_folder}/{app.config["user_name"]}/Json_toAI'
-        app.config["UPLOAD_FOLDER"] = f'{upload_folder}/{app.config["user_name"]}/uploads'
-        if not os.path.exists(app.config["UPLOAD_FOLDER"]):
-            os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
-        if not os.path.exists(app.config["JSON_DIR"]):
-            os.makedirs(app.config["JSON_DIR"], exist_ok=True)
+        json_dir = f'{upload_folder}/{app.config["user_name"]}/Json_toAI'
+        upload_folder = f'{upload_folder}/{app.config["user_name"]}/uploads'
+        if not os.path.exists(upload_folder):
+            os.makedirs(upload_folder, exist_ok=True)
+        if not os.path.exists(json_dir):
+            os.makedirs(json_dir, exist_ok=True)
         return render_template("main.html", user_name=app.config["user_name"])
     else:
         app.config["user_name"]=None
@@ -183,13 +183,16 @@ def analyse_folder():
 @app.route("/results", methods=["GET"])
 def get_results():
     try:
+        user_name = app.config["user_name"]
+        upload_folder=app.config["UPLOAD_FOLDER"]
+        json_dir = f'{upload_folder}/{user_name}/Json_toAI'
         # List all files in the JSON_DIR ending with .json
-        json_files = [f for f in os.listdir(app.config["JSON_DIR"]) if f.endswith(".json")]
+        json_files = [f for f in os.listdir(json_dir) if f.endswith(".json")]
         if not json_files:
             return jsonify({"error": "No JSON file found in Json_toAI directory."}), 404
 
         # Assume there is only one JSON file, so pick the first one.
-        json_file = os.path.join(app.config["JSON_DIR"], json_files[0])
+        json_file = os.path.join(json_dir, json_files[0])
         with open(json_file, "r", encoding="utf-8") as f:
             data = json.load(f)
             
@@ -204,8 +207,18 @@ def get_uml():
         return redirect("/")
     
     document_type = request.form.get("document_type")
+    user_name = app.config["user_name"]
+    upload_folder=app.config["UPLOAD_FOLDER"]
+    json_dir = f'{upload_folder}/{user_name}/Json_toAI'
 
-    return generate_uml(document_type, app.config["JSON_DIR"])
+    json_files = [f for f in os.listdir(json_dir) if f.endswith(".json")]
+    if not json_files:
+        return jsonify({"error": "No JSON file found in Json_toAI directory."}), 404
+
+    # Assume there is only one JSON file, so pick the first one.
+    json_file = os.path.join(json_dir, json_files[0])
+
+    return generate_uml(document_type, json_file)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0')
