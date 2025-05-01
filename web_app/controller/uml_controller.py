@@ -8,7 +8,7 @@ from typing import Tuple
 from flask import jsonify
 import graphviz
 
-from config.external_ai_config import get_prompt, get_openai
+from config.external_ai_config import get_prompt, get_openai, upload_file_for_chat
 
 
 def load_latest_txt(json_dir: str) -> Tuple[str, str]:
@@ -27,6 +27,7 @@ def load_latest_txt(json_dir: str) -> Tuple[str, str]:
     return latest.name, latest.read_text(encoding="utf-8")
 
 
+
 def generate_uml(document_type: str, json_dir: str):
     try:
 
@@ -36,14 +37,21 @@ def generate_uml(document_type: str, json_dir: str):
 
         # ─── STEP 2: call OpenAI for DOT code ───────────────────────────────────
         client = get_openai()
+
+        file_id = upload_file_for_chat(client, file_name, exported_text)
+
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model="o3-mini",
             messages=[
                 {
                     "role": "system",
-                    "content": "You are an expert in generating optimized Graphviz diagrams.",
+                    "content": "You are an expert in generating optimized Code of Graphviz diagrams."
+                    "Return ONLY valid DOT or digraph code."
                 },
-                {"role": "user", "content": prompt},
+                {"role": "user", 
+                 "content": prompt,
+                 "file_ids":[file_id]
+                 },
             ],
             temperature=0,
             max_tokens=4096,

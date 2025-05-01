@@ -26,3 +26,14 @@ def get_prompt(document_type: str) -> str:
     please try to draw a {document_type} to illustrate the design of the project. 
     Please only send back the PlantUML code without any explanation.
     """
+
+def upload_file_for_chat(client: AzureOpenAI, name: str, text: str) -> str:
+    """
+    Upload `text` as a temporary file and return the resulting file-id.
+    """
+    payload = {
+        "file": (name, text.encode("utf-8"), "text/plain"),
+        "purpose": "assistants"
+    }
+    file_obj = client.files.create(**payload)
+    return file_obj.id
