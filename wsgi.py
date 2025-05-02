@@ -3,7 +3,7 @@ import os, sys, json,traceback
 from flask import Flask, request, render_template, jsonify, send_file,redirect
 from werkzeug.utils import secure_filename
 from web_app.controller.analyzer_controller import process_folder
-from web_app.controller.file_controller import export_to_json, is_ProjectExist
+from web_app.controller.file_controller import export_to_json, is_ProjectExist,clear_user_repository
 from web_app.model.json_for_useCase import prepare_json
 import shutil
 from web_app.controller.uml_controller import generate_uml
@@ -54,7 +54,12 @@ def reset_db_route():
 def return_user_repository():
     pass
 
-
+@app.route("/clear_user_repository")
+def clear_repository():
+    project_name = request.form.get("clearProjectName")
+    if not project_name:
+        return jsonify({"error": f"❌ Please enter project name"}), 500
+    return clear_user_repository(project_name)
 
 @app.route("/initialize_db", methods=["POST"])
 def initialize_db():

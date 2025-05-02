@@ -1,12 +1,29 @@
 import sys
 import os
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional,Union
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
-from flask import current_app
+from flask import current_app,jsonify
 from model.json_for_useCase import prepare_json
 import json
 from datetime import datetime
+import shutil
+from werkzeug.utils import secure_filename
+def safe_rm_tree(path: Path) -> bool:
+    """
+    Recursively delete *path* if it exists and is inside its expected parent.
+    Returns True when something was removed, False when the directory was missing.
+    """
+    if not path.exists():
+        return False
+
+    # safety-belt: never allow traversal outside the user area
+    expected_parent = path.parents[1]          # …/<user>/{Json_toAI|uploads}
+    if not path.resolve().is_relative_to(expected_parent.resolve()):
+        raise RuntimeError(f"Refusing to delete path outside user area: {path}")
+
+    shutil.rmtree(path)
+    return True
 
 def export_to_json(data, project_name,user_name):
     error_msg=[]
@@ -119,7 +136,44 @@ def get_user_repository() -> Dict[str, Optional[str]]:
 
     return result
 
+def clear_user_repository(project_name: str) -> Dict[str, Union[bool, str]]:
+    """
+    Delete the *project_name* directory from both
+        •  …/<user>/uploads/<project_name>
+        •  …/<user>/Json_toAI/<project_name>
 
+    Returns a dict with per-location status:
+
+        {
+          "uploads"  : True|False|"<error msg>",
+          "Json_toAI": True|False|"<error msg>"
+        }
+    """
+    if not project_name:
+        return jsonify({"error": f"❌ Please enter project name"}), 500
+
+    # sanitise so that “../../etc” can’t be injected
+    safe_name = secure_filename(project_name)
+
+    users_path = Path(current_app.config["USERS_PATH"])
+    user_name  = current_app.config["user_name"]
+
+    uploads_dir = users_path / user_name / "uploads"   / safe_name
+    json_dir    = users_path / user_name / "Json_toAI" / safe_name
+
+    result: Dict[str, Union[bool, str]] = {}
+
+    for label, path in (("uploads", uploads_dir), ("Json_toAI", json_dir)):
+        try:
+            result[label] = safe_rm_tree(path)
+        except Exception as exc:
+            # capture the error string so the caller can inspect it
+            result[label] = f"error: {exc}"
+    
+    db=current_app.config["db"]
+    db.reset_db()
+
+    return result
 #This is for self testing
 def print_data(data):
     if data is None:
