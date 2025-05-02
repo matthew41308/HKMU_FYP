@@ -1,21 +1,12 @@
 # Flask is used for the web application.
 Flask
-
 # PyMySQL is used for database interactions.
 PyMySQL
-
 # OpenAI library to interact with the OpenAI API.
 openai
-
 # PlantUML package acts as a wrapper—helpful if you wish to integrate with the PlantUML jar.
 plantuml
-
 sshtunnel
-
-graphviz
-
 gunicorn
-
 fastapi
-
 uvicorn

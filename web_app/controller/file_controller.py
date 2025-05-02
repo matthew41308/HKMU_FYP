@@ -1,7 +1,7 @@
 import sys
 import os
-import gzip
-import re
+from pathlib import Path
+from typing import Dict, Optional
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 from flask import current_app
 from model.json_for_useCase import prepare_json
@@ -10,7 +10,7 @@ from datetime import datetime
 
 def export_to_json(data, project_name,user_name):
     error_msg=[]
-    project_export_dir=f"{current_app.config["USERS_PATH"]}/{user_name}/Json_toAI/{project_name}"
+    project_export_dir=f"{current_app.config['USERS_PATH']}/{user_name}/Json_toAI/{project_name}"
     if not os.path.exists(project_export_dir):
         os.makedirs(project_export_dir)
         print(f"Created directory: {project_export_dir}")
@@ -64,8 +64,60 @@ def export_to_json(data, project_name,user_name):
         return json_filename,error_msg
     
 def is_ProjectExist(project_name):
-    if os.path.exists(f"{current_app.config["USERS_PATH"]}/{current_app.config["user_name"]}/uploads/{project_name}"):
+    if os.path.exists(f"{current_app.config['USERS_PATH']}/{current_app.config['user_name']}/uploads/{project_name}"):
         return True
+    
+def _newest_txt_file(folder: Path) -> Optional[str]:
+    """
+    Return the newest *.txt file **inside `folder`** or ``None`` if there are none.
+    """
+    txt_files = [p for p in folder.glob("*.txt") if p.is_file()]
+    if not txt_files:
+        return None
+    newest = max(txt_files, key=lambda p: p.stat().st_mtime)
+    return newest.name
+
+
+def get_user_repository() -> Dict[str, Optional[str]]:
+    """
+    Build a mapping
+
+        {
+          "<project_name from uploads>" : "<txt-file name in Json_toAI>/<project_name>",
+          ...
+        }
+
+    • If the project *exists* in Json_toAI and contains at least one *.txt file,
+      we return the newest file’s name.
+    • Otherwise the value is ``None``.
+    """
+    users_path: str = current_app.config["USERS_PATH"]
+    user_name: str = current_app.config["user_name"]
+
+    uploads_root   = Path(users_path) / user_name / "uploads"
+    exports_root   = Path(users_path) / user_name / "Json_toAI"
+
+    if not uploads_root.exists():
+        return {}
+
+    result: Dict[str, Optional[str]] = {}
+
+    # 1️⃣ iterate over first-level folders in /uploads
+    for project_folder in uploads_root.iterdir():
+        if not project_folder.is_dir():
+            continue                      # skip stray files
+
+        project_name = project_folder.name
+        candidate_export_dir = exports_root / project_name
+
+        # 2️⃣ look for a matching folder in Json_toAI
+        if candidate_export_dir.is_dir():
+            newest_txt = _newest_txt_file(candidate_export_dir)
+            result[project_name] = newest_txt
+        else:
+            result[project_name] = None
+
+    return result
 
 
 #This is for self testing

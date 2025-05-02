@@ -3,7 +3,7 @@ import os, sys, json,traceback
 from flask import Flask, request, render_template, jsonify, send_file,redirect
 from werkzeug.utils import secure_filename
 from web_app.controller.analyzer_controller import process_folder
-from web_app.controller.file_controller import export_to_json
+from web_app.controller.file_controller import export_to_json, is_ProjectExist
 from web_app.model.json_for_useCase import prepare_json
 import shutil
 from web_app.controller.uml_controller import generate_uml
@@ -48,6 +48,12 @@ def reset_db_route():
         jsonify({"message":"Database reset successfully"}),200
     else:
         return jsonify({"error": "Fail to reset database"}), 500
+    
+#will called from file_controller.py
+@app.route("/get_user_repository")
+def return_user_repository():
+    pass
+
 
 
 @app.route("/initialize_db", methods=["POST"])
@@ -93,6 +99,9 @@ def upload():
         return jsonify({"error": "Missing projectName"}), 400
 
     project_name = secure_filename(raw_project_name)   # remove dangerous chars
+
+    if is_ProjectExist(project_name):
+        jsonify({"error": f"❌ The project already exist. Please change the name of the project"}), 500
     
     uploaded_files = request.files.getlist("file")
     if not uploaded_files:
@@ -147,7 +156,7 @@ def analyse_folder():
         return redirect("/")
     project_name = request.form.get("projectName")
     try:
-        folder_path=f"{app.config["USERS_PATH"]}/uploads/{app.config["user_name"]}/{project_name}"
+        folder_path=f"{app.config['USERS_PATH']}/uploads/{app.config['user_name']}/{project_name}"
         if not os.path.isdir(folder_path):
             return jsonify({"error": f"Folder '{folder_path}' does not exist."}), 404
         
