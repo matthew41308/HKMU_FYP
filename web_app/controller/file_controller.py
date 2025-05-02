@@ -170,8 +170,6 @@ def clear_user_repository(project_name: str) -> Dict[str, Union[bool, str]]:
             # capture the error string so the caller can inspect it
             result[label] = f"error: {exc}"
     
-    db=current_app.config["db"]
-    db.reset_db()
 
     return result
 #This is for self testing

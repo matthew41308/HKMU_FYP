@@ -49,10 +49,6 @@ def reset_db_route():
     else:
         return jsonify({"error": "Fail to reset database"}), 500
     
-#will called from file_controller.py
-@app.route("/get_user_repository")
-def return_user_repository():
-    pass
 
 @app.route("/clear_user_repository")
 def clear_repository():
