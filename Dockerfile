@@ -8,11 +8,12 @@ ENV  PLANTUML_JAR_PATH=/opt/plantuml.jar
 WORKDIR /project
 
 # ─── OS packages ----------------------------------------------------------
-RUN --mount=type=cache,target=/var/cache/apt \
+    RUN --mount=type=cache,target=/var/cache/apt \
     apt-get update && \
     DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends \
         curl \
+        netcat-openbsd \        
         openjdk-17-jre-headless && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
