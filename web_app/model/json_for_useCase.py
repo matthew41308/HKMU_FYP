@@ -4,7 +4,7 @@ import os
 from flask import current_app
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 
-def get_json_for_useCase():
+def prepare_json():
     error_msg=[]
     """
     Fetch all data from components, methods, method parameters, and variables tables
@@ -70,5 +70,5 @@ def print_formatted_data(data):
                 print(f"  {key}: {value}")
 
 if __name__ =="__main__":
-    data = get_json_for_useCase()
+    data = prepare_json()
     print_formatted_data(data)

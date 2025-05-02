@@ -14,12 +14,10 @@ def init_app():
     # Store the db and cursor in the app config so they can be used globally
     app.config['db'] = db
     app.config['cursor'] = cursor
-    app.config["UPLOAD_FOLDER"] = "/var/data/users"
+    app.config["USERS_PATH"] = "/var/data/users"
     app.config["JSON_DIR"] = ""
-    app.config["OUTPUT_PUML"] = "output.puml"
-    app.config["OUTPUT_PNG"] = "output.png"
     app.config["is_login"] = False
     app.config["user_name"] = None
     app.config["ALLOWED_EXTENSIONS"] = {"py"}
-    app.config["PLANTUML_JAR_PATH"] = "/var/data/tools/plantuml.jar"
+    app.config["PLANTUML_JAR_PATH"] = os.getenv("PLANTUML_JAR_PATH", "/opt/plantuml.jar")
     return app

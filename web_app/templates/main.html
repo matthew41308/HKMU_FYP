@@ -10,16 +10,19 @@
      <body>
         <div id="loader"></div>
 
+        <div id="enter_project_name">
+            <h1>📂 Enter Project Name </h1>
+            <input type="text" id="projectName" name="projectName" >
+        </div>
+
       <h1>📂 Upload Code</h1>
-      <form id="uploadForm" enctype="multipart/form-data">
+      <form id="uploadFolder" enctype="multipart/form-data">
         <input type="file" id="fileInput" name="file" webkitdirectory directory multiple>
           <button type="submit">📤 Upload</button>
       </form>
 
     <div id="analyse">
-        <h1>📂 Start Analysing</h1>
-        <input type="text" id="projectName" name="projectName" >
-        <button  onClick="analyse_folder()" >📤 Analyse</button>
+        <button  onClick="analyse_folder()" >📂 Start Analysis</button>
     </div>
     
       <div class="container">
@@ -72,20 +75,33 @@
                 document.getElementById("loader").style.display = "none";
             }
 
-            document.getElementById("uploadForm").addEventListener("submit", uploadForm);
+            document.getElementById("uploadFolder").addEventListener("submit", uploadFolder);
 
-            function uploadForm(event) {
+            function uploadFolder(event) {
                 event.preventDefault();
                 const files = document.getElementById("fileInput").files;
-                
-
+                const projectName = document.getElementById("projectName").value.trim();
+                formData.append("projectName", projectName);
                 if (files.length === 0) {
-                    alert("❌ Please select at least one file or folder before uploading！");
+                    alert("❌ Please select or upload at least one file or folder before uploading！");
+                    return;
+                }
+
+                if (!projectName)
+                {
+                    alert("❌ Please enter project name");
+                    return;
+                }
+
+                if (has_InvalidChars(projectName))
+                {
+                    alert("❌ Your project name has invalid characters.")
                     return;
                 }
 
                 startLoading();
                 const formData = new FormData();
+                formData.append("projectName", projectName);
                 // Append all files
                 for (let i = 0; i < files.length; i++) {
                     formData.append("file", files[i]);
@@ -101,16 +117,6 @@
                         alert("❌ Upload failed：" + data.error);
                     } else {
                         alert("✅ " + data.message);
-                        
-                        // Get the root folder name using webkitRelativePath if available
-                        if (files[0].webkitRelativePath) {
-                            // The relative path may look like "rootFolder/subfolder/filename.ext"
-                            const rootFolder = files[0].webkitRelativePath.split("/")[0];
-                            document.getElementById("projectName").value = rootFolder;
-                        } else {
-                            // Fallback to the file name if webkitRelativePath is unavailable
-                            document.getElementById("projectName").value = files[0].name;
-                        }
                     }
                 })
                 .catch(error => {
@@ -121,22 +127,38 @@
                 });
             }
 
-            function sanitizeFileName(name) 
+            function sanitizeFileName(file_name) 
             {
                 /*
                 * Remove characters that are invalid or problematic in most file systems:
                 *    / \ ? % * : | " < > and convert whitespace runs to single underscore.
                 */
-                return name
+                return file_name
                     .replace(/[\/\\?%*:|"<>]/g, '')
                     .replace(/\s+/g, '_')
                     .trim() || 'diagram';
+            }
+
+            function has_InvalidChars(name) 
+            {
+                const INVALID_RE = /[\/\\?%*:|"<>]/;
+                return INVALID_RE.test(name);
             }
 
             function analyse_folder()
             {
                 startLoading();
                 const projectName = document.getElementById("projectName").value;
+                if (!projectName)
+                {
+                    alert("❌ Please enter project name");
+                }
+
+                if (has_InvalidChars(projectName))
+                {
+                    alert("❌ Your project name has invalid characters.")
+                }
+
                 const formData = new FormData();
                 formData.append("projectName", projectName);
                 fetch("/analyse_folder", {
@@ -177,8 +199,8 @@
     
             function generateUML() 
             {
-                const projectNameRaw = document.getElementById('projectName').value;
-                filePrefix = sanitizeFileName(projectNameRaw);
+                const projectName = document.getElementById('projectName').value.trim();
+                filePrefix = sanitizeFileName(projectName);
                 let document_type = document.getElementById("document_type")?.value || '';
                 if (!document_type) {
                     alert("❌ Please select document type.");
@@ -196,6 +218,7 @@
                 startLoading();
                 const formData = new FormData();
                 formData.append("document_type", document_type);
+                formData.append("project_name",projectName)
 
                 fetch("/get_uml", {
                     method: "POST",

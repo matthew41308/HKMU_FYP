@@ -3,8 +3,8 @@ import os, sys, json,traceback
 from flask import Flask, request, render_template, jsonify, send_file,redirect
 from werkzeug.utils import secure_filename
 from web_app.controller.analyzer_controller import process_folder
-from web_app.controller.json_controller import export_to_json
-from web_app.model.json_for_useCase import get_json_for_useCase
+from web_app.controller.file_controller import export_to_json
+from web_app.model.json_for_useCase import prepare_json
 import shutil
 from web_app.controller.uml_controller import generate_uml
 from web_app.model.user_model import login_verification
@@ -21,12 +21,12 @@ def login():
     user_pwd = request.form.get("user_pwd")
 
     if login_verification(app.config["user_name"], user_pwd):
-        upload_folder=app.config["UPLOAD_FOLDER"]
+        users_path=app.config["USERS_PATH"]
         app.config["is_login"]=True
-        json_dir = f'{upload_folder}/{app.config["user_name"]}/Json_toAI'
-        upload_folder = f'{upload_folder}/{app.config["user_name"]}/uploads'
-        if not os.path.exists(upload_folder):
-            os.makedirs(upload_folder, exist_ok=True)
+        json_dir = f'{users_path}/{app.config["user_name"]}/Json_toAI'
+        users_path = f'{users_path}/{app.config["user_name"]}/uploads'
+        if not os.path.exists(users_path):
+            os.makedirs(users_path, exist_ok=True)
         if not os.path.exists(json_dir):
             os.makedirs(json_dir, exist_ok=True)
         return render_template("main.html", user_name=app.config["user_name"])
@@ -87,9 +87,25 @@ def upload():
     if not (app.config["user_name"] and app.config["is_login"]):
         return redirect("/")
     
+    raw_project_name = request.form.get("projectName", "")
+
+    if not raw_project_name:
+        return jsonify({"error": "Missing projectName"}), 400
+
+    project_name = secure_filename(raw_project_name)   # remove dangerous chars
+    
     uploaded_files = request.files.getlist("file")
     if not uploaded_files:
         return jsonify({"error": "No files received"}), 400
+    
+    # Base directory =  …/<user>/<project_name>
+    base_dir = os.path.join(
+        app.config["USERS_PATH"],
+        app.config["user_name"],
+        "uploads",
+        project_name,
+    )
+    os.makedirs(base_dir, exist_ok=True)
 
     for file in uploaded_files:
         if file and allowed_file(file.filename):
@@ -101,18 +117,20 @@ def upload():
             )
             # Standardize the path delimiters to forward slash.
             relative_path = relative_path.replace("\\", "/")
-            # Split the path into its components, then secure each part.
-            parts = [secure_filename(part) for part in relative_path.split("/") if part]
-            # Reconstruct the path preserving the directory structure.
-            safe_path = os.path.join(*parts)
-            full_save_path = os.path.join(app.config["UPLOAD_FOLDER"], safe_path)
-            # Create directory structure if it doesn't exist.
+            
+            parts = [secure_filename(p) for p in relative_path.split("/") if p]
+            if parts:
+                parts = parts[1:]                           # remove original root
+
+            safe_relative_path = os.path.join(*parts) if parts else ""
+            full_save_path = os.path.join(base_dir, safe_relative_path)
+
             os.makedirs(os.path.dirname(full_save_path), exist_ok=True)
             file.save(full_save_path)
 
     return jsonify({
         "message": f"✅ {len(uploaded_files)} files uploaded successfully!",
-        "uploaded_path": app.config["UPLOAD_FOLDER"]
+        "uploaded_path": base_dir
     }), 200
 
 @app.route("/analyse_folder", methods=["POST"])
@@ -127,14 +145,13 @@ def analyse_folder():
     errorMessages = []
     if not app.config["is_login"]:
         return redirect("/")
-    
+    project_name = request.form.get("projectName")
     try:
-        folder_path = app.config["UPLOAD_FOLDER"]
+        folder_path=f"{app.config["USERS_PATH"]}/uploads/{app.config["user_name"]}/{project_name}"
         if not os.path.isdir(folder_path):
             return jsonify({"error": f"Folder '{folder_path}' does not exist."}), 404
         
         print(f"✅ Starting analysis on folder: {folder_path}")
-        project_name = request.form.get("projectName")
 
         # STEP 1: Process the folder and capture any error messages.
         folder_errors = process_folder(folder_path)
@@ -144,7 +161,7 @@ def analyse_folder():
             print("✅ Folder processing completed with no errors.")
         
         # STEP 2: Retrieve use-case data from the database.
-        data,data_error = get_json_for_useCase()
+        data,data_error = prepare_json()
         if data_error:
             errorMessages.append(data_error)
             return jsonify({
@@ -152,10 +169,10 @@ def analyse_folder():
                 "error": errorMessages
             }), 500
         else:
-            print("✅ Use-case data successfully retrieved.")
+            print("✅ Data successfully retrieved.")
         
         # STEP 3: Export the use-case data to JSON, GZ, and TXT files.
-        export_result,json_error= export_to_json(data, project_name, app.config["JSON_DIR"])
+        export_result,json_error= export_to_json(data, project_name, app.config["user_name"])
         if json_error:
             errorMessages.append(json_error)
             return jsonify({
@@ -207,9 +224,10 @@ def get_uml():
         return redirect("/")
     
     document_type = request.form.get("document_type")
+    project_name = request.form.get("project_name")
     user_name = app.config["user_name"]
-    upload_folder=app.config["UPLOAD_FOLDER"]
-    json_dir = f'{upload_folder}/{user_name}/Json_toAI'
+    
+    json_dir = f'{app.config["USERS_PATH"]}/{user_name}/Json_toAI/{project_name}'
 
     return generate_uml(document_type, json_dir)
 

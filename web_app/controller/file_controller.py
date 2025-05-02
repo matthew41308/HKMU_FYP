@@ -4,31 +4,20 @@ import gzip
 import re
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
 from flask import current_app
-from model.json_for_useCase import get_json_for_useCase
+from model.json_for_useCase import prepare_json
 import json
 from datetime import datetime
 
-def export_to_json(data, project_name,json_dir):
+def export_to_json(data, project_name,user_name):
     error_msg=[]
-    if not os.path.exists(json_dir):
-        os.makedirs(json_dir)
-        print(f"Created directory: {json_dir}")
-
-    # Determine the attempt number based on existing files for the provided project_name.
-    attempt = 1
-    # Check for any files that match the pattern "{project_name}_<number>.<ext>"
-    for filename in os.listdir(json_dir):
-        # Use re.escape in case the project_name contains special regex characters.
-        match = re.match(rf"^{re.escape(project_name)}_(\d+)\.", filename)
-        if match:
-            current_attempt = int(match.group(1))
-            if current_attempt >= attempt:
-                attempt = current_attempt + 1
+    project_export_dir=f"{current_app.config["USERS_PATH"]}/{user_name}/Json_toAI/{project_name}"
+    if not os.path.exists(project_export_dir):
+        os.makedirs(project_export_dir)
+        print(f"Created directory: {project_export_dir}")
 
     # Build filenames using the attempt count.
-    json_filename = os.path.join(json_dir, f"{project_name}_{attempt}.json")
-    text_filename = os.path.join(json_dir, f"{project_name}_{attempt}.txt")
-    gzip_json_filename = os.path.join(json_dir, f"{project_name}_{attempt}.json.gz")
+    json_filename = os.path.join(project_export_dir, f"{project_name}.json")
+    text_filename = os.path.join(project_export_dir, f"{project_name}.txt")
 
     class CustomJSONEncoder(json.JSONEncoder):
         def default(self, obj):
@@ -63,11 +52,6 @@ def export_to_json(data, project_name,json_dir):
             f.write(serialized_data)
         print(f"Data exported successfully to {json_filename}")
 
-        # Write the minified JSON to a gzip-compressed file.
-        with gzip.open(gzip_json_filename, 'wt', encoding='utf-8') as f:
-            f.write(serialized_data)
-        print(f"Data exported successfully to {gzip_json_filename}")
-
         # Create a text file version by stripping out all double quotes.
         text_data = serialized_data.replace('"', '')
         with open(text_filename, 'w', encoding='utf-8') as f:
@@ -78,7 +62,13 @@ def export_to_json(data, project_name,json_dir):
     except Exception as e:
         error_msg.extend(f"Error exporting to JSON/text: {e}")
         return json_filename,error_msg
+    
+def is_ProjectExist(project_name):
+    if os.path.exists(f"{current_app.config["USERS_PATH"]}/{current_app.config["user_name"]}/uploads/{project_name}"):
+        return True
 
+
+#This is for self testing
 def print_data(data):
     if data is None:
         print("No data retrieved")
@@ -100,7 +90,7 @@ def print_data(data):
 if __name__=="__main__":
     db=current_app.config["db"]
     cursor = current_app.config['cursor']
-    result = get_json_for_useCase(db, cursor)
+    result = prepare_json(db, cursor)
     # Print summary of the data
     print_data(result)
     project_name = "library_management"
